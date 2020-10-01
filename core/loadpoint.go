@@ -68,6 +68,8 @@ type LoadPoint struct {
 	}
 	Enable, Disable ThresholdConfig
 
+	TargetCharge
+
 	handler       Handler
 	HandlerConfig `mapstructure:",squash"` // handle charger state and current
 
@@ -648,6 +650,7 @@ func (lp *LoadPoint) Update(sitePower float64) {
 	// check if car connected and ready for charging
 	var err error
 
+STRATEGY:
 	// execute loading strategy
 	switch {
 	case !lp.connected():
@@ -658,13 +661,14 @@ func (lp *LoadPoint) Update(sitePower float64) {
 	case lp.targetSocReached(lp.socCharge, float64(lp.TargetSoC)):
 		err = lp.handler.Ramp(0)
 
-	case lp.targetChargingActive():
-		if lp.targetChargingStartRequired() {
-			err = lp.targetCharging()
-		} else {
-			falltrough
+	case lp.TargetCharge.Active():
+		lp.TargetCharge.LoadPoint = lp
+		if lp.TargetCharge.StartRequired() {
+			err = lp.TargetCharge.Handle()
+			break STRATEGY
 		}
-		
+		fallthrough
+
 	case mode == api.ModeOff:
 		err = lp.handler.Ramp(0, true)
 
