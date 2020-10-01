@@ -658,6 +658,13 @@ func (lp *LoadPoint) Update(sitePower float64) {
 	case lp.targetSocReached(lp.socCharge, float64(lp.TargetSoC)):
 		err = lp.handler.Ramp(0)
 
+	case lp.targetChargingActive():
+		if lp.targetChargingStartRequired() {
+			err = lp.targetCharging()
+		} else {
+			falltrough
+		}
+		
 	case mode == api.ModeOff:
 		err = lp.handler.Ramp(0, true)
 
