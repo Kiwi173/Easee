@@ -4,14 +4,14 @@ import "time"
 
 const (
 	utilization float64 = 0.7
-	deviation           = 5 * time.Minute
+	deviation           = 10 * time.Minute
 )
 
 type TargetCharge struct {
+	Time time.Time
+	SoC  int
 	*LoadPoint
-	Time    time.Time
-	SoC     int
-	current int64
+	finishAt time.Time
 }
 
 func (lp TargetCharge) Active() bool {
@@ -20,13 +20,10 @@ func (lp TargetCharge) Active() bool {
 }
 
 func (lp TargetCharge) StartRequired() bool {
-	// remainingEnergy := lp.socEstimator.RemainingChargeEnergy(lp.TargetSoC) / utilization
-	// lp.log.DEBUG.Printf("target charging remaining energy: %.1f", remainingEnergy)
-
 	// current/power
-	lp.current = int64(float64(lp.MaxCurrent) * utilization)
-	lp.current = clamp(lp.current, lp.MinCurrent, lp.MaxCurrent)
-	power := float64(lp.current*lp.Phases) * Voltage
+	current := int64(float64(lp.MaxCurrent) * utilization)
+	current = clamp(current, lp.MinCurrent, lp.MaxCurrent)
+	power := float64(current*lp.Phases) * Voltage
 
 	// time
 	remainingDuration := lp.socEstimator.RemainingChargeDuration(power, lp.SoC)
@@ -34,18 +31,23 @@ func (lp TargetCharge) StartRequired() bool {
 
 	lp.log.DEBUG.Printf("target charging remaining time: %v (finish %v at %.1f utilization)", remainingDuration, lp.finishAt, utilization)
 
-	return finishAt.After(lp.Time)
+	return lp.finishAt.After(lp.Time)
 }
 
 func (lp TargetCharge) Handle() error {
+	current := lp.handler.TargetCurrent()
+
 	switch {
 	case lp.finishAt.Before(lp.Time.Add(-deviation)):
-		lp.current = lp.current - 1
+		current -= 1
+		lp.log.DEBUG.Printf("target charging: slowdown")
+
 	case lp.finishAt.After(lp.Time.Add(deviation)):
-		lp.current = lp.current + 1
+		current += 1
+		lp.log.DEBUG.Printf("target charging: speedup")
 	}
 
-	lp.current = clamp(lp.current, lp.MinCurrent, lp.MaxCurrent)
+	current = clamp(current, lp.MinCurrent, lp.MaxCurrent)
 
-	return lp.handler.Ramp(lp.current)
+	return lp.handler.Ramp(current)
 }

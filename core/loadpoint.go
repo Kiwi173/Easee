@@ -208,6 +208,21 @@ func (lp *LoadPoint) SetTargetSoC(targetSoC int) {
 	}
 }
 
+// SetTargetCharge sets loadpoint charge targetSoC
+func (lp *LoadPoint) SetTargetCharge(finishAt time.Time, targetSoC int) {
+	lp.Lock()
+	defer lp.Unlock()
+
+	lp.log.INFO.Printf("set target charge: %d @ %v", targetSoC, finishAt)
+
+	// apply immediately
+	// TODO check reset of targetSoC
+	lp.publish("targetTime", finishAt)
+	lp.publish("targetSoC", targetSoC)
+
+	lp.requestUpdate()
+}
+
 // requestUpdate requests site to update this loadpoint
 func (lp *LoadPoint) requestUpdate() {
 	select {
