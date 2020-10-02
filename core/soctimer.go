@@ -74,7 +74,8 @@ func (lp *SoCTimer) StartRequired() bool {
 	return lp.chargeRequired
 }
 
-// Handle adjusts current up/down to achieve desired target time
+// Handle adjusts current up/down to achieve desired target time taking.
+// PV mode target current into consideration to ensure maximum PV usage.
 func (lp *SoCTimer) Handle(pvCurrent int64) error {
 	current := lp.handler.TargetCurrent()
 
