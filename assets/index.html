@@ -410,7 +410,11 @@ loadpoints:
 
 <script type="text/x-template" id="vehicle-template">
 <div>
-  <div class="mb-2">{{state.socTitle||"Fahrzeug"}}</div>
+  <div class="mb-2">{{state.socTitle||"Fahrzeug"}}
+    <i class="text-primary fas fa-clock ml-1" v-if="state.socTimerActive"></i>
+    <i class="text-secondary fas fa-clock ml-1" v-else-if="state.socTimerSet"></i>
+    <i class="text-secondary far fa-clock ml-1" v-else></i>
+  </div>
   <div class="progress" style="height: 24px; font-size:100%; margin-top:16px">
     <div class="progress-bar" role="progressbar" v-bind:class="{
         'progress-bar-striped': state.charging,

@@ -118,6 +118,9 @@ func NewLoadPointFromConfig(log *util.Logger, cp configProvider, other map[strin
 	if lp.VehicleRef != "" {
 		lp.vehicle = cp.Vehicle(lp.VehicleRef)
 		lp.socEstimator = wrapper.NewSocEstimator(log, lp.vehicle, lp.SoC.Estimate)
+
+		// allow target charge handler to access loadpoint
+		lp.TargetCharge.LoadPoint = lp
 	}
 
 	if lp.ChargerRef == "" {
@@ -212,6 +215,9 @@ func (lp *LoadPoint) SetTargetSoC(targetSoC int) {
 func (lp *LoadPoint) SetTargetCharge(targetSoC int, targetTime time.Time) {
 	lp.Lock()
 	defer lp.Unlock()
+
+	lp.TargetCharge.SoC = targetSoC
+	lp.TargetCharge.Time = targetTime
 
 	lp.log.INFO.Printf("set target charge: %d%% @ %v", targetSoC, targetTime)
 
@@ -684,7 +690,6 @@ STRATEGY:
 		lp.TargetCharge.Reset() // once SoC is reached, the target charge request is removed
 
 	case lp.TargetCharge.Active():
-		lp.TargetCharge.LoadPoint = lp
 		if lp.TargetCharge.StartRequired() {
 			err = lp.TargetCharge.Handle()
 			break STRATEGY

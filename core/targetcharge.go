@@ -10,9 +10,10 @@ const (
 // TargetCharge is the target charging handler
 type TargetCharge struct {
 	*LoadPoint
-	SoC      int
-	Time     time.Time
-	finishAt time.Time
+	SoC            int
+	Time           time.Time
+	finishAt       time.Time
+	chargeRequired bool
 }
 
 // Supported returns true if target charging is possible, i.e. the vehicle soc can be determined
@@ -23,6 +24,14 @@ func (lp TargetCharge) Supported() bool {
 // Active returns true if there is an active target charging request
 func (lp TargetCharge) Active() bool {
 	inactive := lp.Time.IsZero() || lp.Time.Before(time.Now())
+	lp.publish("socTimerSet", !inactive)
+
+	// reset active
+	if inactive && lp.chargeRequired {
+		lp.chargeRequired = false
+		lp.publish("socTimerActive", lp.chargeRequired)
+	}
+
 	return !inactive
 }
 
@@ -48,9 +57,12 @@ func (lp TargetCharge) StartRequired() bool {
 	remainingDuration := lp.socEstimator.RemainingChargeDuration(power, lp.SoC)
 	lp.finishAt = time.Now().Add(remainingDuration).Round(time.Minute)
 
-	lp.log.DEBUG.Printf("target charging remaining time: %v (finish %v at %.1f utilization)", remainingDuration, lp.finishAt, utilization)
+	lp.log.DEBUG.Printf("target charging remaining time: %v (finish %v at %.1f utilization)", remainingDuration.Round(time.Minute), lp.finishAt, utilization)
 
-	return lp.finishAt.After(lp.Time)
+	lp.chargeRequired = lp.finishAt.After(lp.Time)
+	lp.publish("socTimerActive", lp.chargeRequired)
+
+	return lp.chargeRequired
 }
 
 // Handle adjusts current up/down to achieve desired target time
