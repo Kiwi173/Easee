@@ -23,12 +23,18 @@ func (lp *SoCTimer) Supported() bool {
 
 // Reset resets the target charging request
 func (lp *SoCTimer) Reset() {
-	lp.Time = time.Time{}
-	lp.SoC = 0
+	if lp != nil {
+		lp.Time = time.Time{}
+		lp.SoC = 0
+	}
 }
 
 // active returns true if there is an active target charging request
 func (lp *SoCTimer) active() bool {
+	if lp == nil {
+		return false
+	}
+
 	inactive := lp.Time.IsZero() || lp.Time.Before(time.Now())
 	lp.publish("socTimerSet", !inactive)
 
