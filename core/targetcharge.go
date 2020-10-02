@@ -4,9 +4,10 @@ import "time"
 
 const (
 	utilization float64 = 0.6
-	deviation           = 10 * time.Minute
+	deviation           = 30 * time.Minute
 )
 
+// TargetCharge is the target charging handler
 type TargetCharge struct {
 	*LoadPoint
 	SoC      int
@@ -28,14 +29,13 @@ func (lp TargetCharge) Reset() {
 
 // StartRequired calculates remaining charge duration and returns true if charge start is required to achieve target soc in time
 func (lp TargetCharge) StartRequired() bool {
-	// if already charging continue to do so
-	if lp.effectiveCurrent() > 0 {
-		return true
-	}
+	current := lp.effectiveCurrent()
 
 	// use start current for calculation if currently not charging
-	current := int64(float64(lp.MaxCurrent) * utilization)
-	current = clamp(current, lp.MinCurrent, lp.MaxCurrent)
+	if current == 0 {
+		current = int64(float64(lp.MaxCurrent) * utilization)
+		current = clamp(current, lp.MinCurrent, lp.MaxCurrent)
+	}
 
 	power := float64(current*lp.Phases) * Voltage
 
@@ -57,7 +57,7 @@ func (lp TargetCharge) Handle() error {
 		current--
 		lp.log.DEBUG.Printf("target charging: slowdown")
 
-	case lp.finishAt.After(lp.Time.Add(deviation)):
+	case lp.finishAt.After(lp.Time):
 		current++
 		lp.log.DEBUG.Printf("target charging: speedup")
 	}
