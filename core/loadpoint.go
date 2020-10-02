@@ -68,8 +68,6 @@ type LoadPoint struct {
 	}
 	Enable, Disable ThresholdConfig
 
-	TargetCharge
-
 	handler       Handler
 	HandlerConfig `mapstructure:",squash"` // handle charger state and current
 
@@ -79,6 +77,7 @@ type LoadPoint struct {
 	chargeMeter  api.Meter   // Charger usage meter
 	vehicle      api.Vehicle // Vehicle
 	socEstimator *wrapper.SocEstimator
+	socTimer     *SoCTimer
 
 	// cached state
 	status        api.ChargeStatus // Charger status
@@ -120,7 +119,7 @@ func NewLoadPointFromConfig(log *util.Logger, cp configProvider, other map[strin
 		lp.socEstimator = wrapper.NewSocEstimator(log, lp.vehicle, lp.SoC.Estimate)
 
 		// allow target charge handler to access loadpoint
-		lp.TargetCharge.LoadPoint = lp
+		lp.socTimer = &SoCTimer{LoadPoint: lp}
 	}
 
 	if lp.ChargerRef == "" {
@@ -216,8 +215,13 @@ func (lp *LoadPoint) SetTargetCharge(targetSoC int, targetTime time.Time) {
 	lp.Lock()
 	defer lp.Unlock()
 
-	lp.TargetCharge.SoC = targetSoC
-	lp.TargetCharge.Time = targetTime
+	// ignore if no vehicle configured
+	if lp.socTimer == nil {
+		return
+	}
+
+	lp.socTimer.SoC = targetSoC
+	lp.socTimer.Time = targetTime
 
 	lp.log.INFO.Printf("set target charge: %d%% @ %v", targetSoC, targetTime)
 
@@ -687,11 +691,11 @@ STRATEGY:
 
 	case lp.targetSocReached(lp.socCharge, float64(lp.TargetSoC)):
 		err = lp.handler.Ramp(0)
-		lp.TargetCharge.Reset() // once SoC is reached, the target charge request is removed
+		lp.socTimer.Reset() // once SoC is reached, the target charge request is removed
 
-	case lp.TargetCharge.Active():
-		if lp.TargetCharge.StartRequired() {
-			err = lp.TargetCharge.Handle()
+	case lp.socTimer.Active():
+		if lp.socTimer.StartRequired() {
+			err = lp.socTimer.Handle()
 			break STRATEGY
 		}
 		fallthrough

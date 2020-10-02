@@ -7,8 +7,8 @@ const (
 	deviation           = 30 * time.Minute
 )
 
-// TargetCharge is the target charging handler
-type TargetCharge struct {
+// SoCTimer is the target charging handler
+type SoCTimer struct {
 	*LoadPoint
 	SoC            int
 	Time           time.Time
@@ -17,12 +17,12 @@ type TargetCharge struct {
 }
 
 // Supported returns true if target charging is possible, i.e. the vehicle soc can be determined
-func (lp TargetCharge) Supported() bool {
+func (lp *SoCTimer) Supported() bool {
 	return lp.socEstimator != nil
 }
 
 // Active returns true if there is an active target charging request
-func (lp TargetCharge) Active() bool {
+func (lp *SoCTimer) Active() bool {
 	inactive := lp.Time.IsZero() || lp.Time.Before(time.Now())
 	lp.publish("socTimerSet", !inactive)
 
@@ -36,13 +36,13 @@ func (lp TargetCharge) Active() bool {
 }
 
 // Reset resets the target charging request
-func (lp TargetCharge) Reset() {
+func (lp *SoCTimer) Reset() {
 	lp.Time = time.Time{}
 	lp.SoC = 0
 }
 
 // StartRequired calculates remaining charge duration and returns true if charge start is required to achieve target soc in time
-func (lp TargetCharge) StartRequired() bool {
+func (lp *SoCTimer) StartRequired() bool {
 	current := lp.effectiveCurrent()
 
 	// use start current for calculation if currently not charging
@@ -56,17 +56,16 @@ func (lp TargetCharge) StartRequired() bool {
 	// time
 	remainingDuration := lp.socEstimator.RemainingChargeDuration(power, lp.SoC)
 	lp.finishAt = time.Now().Add(remainingDuration).Round(time.Minute)
-
-	lp.log.DEBUG.Printf("target charging remaining time: %v (finish %v at %.1f utilization)", remainingDuration.Round(time.Minute), lp.finishAt, utilization)
+	lp.log.DEBUG.Printf("target charging active for %v: projected %v (%v)", lp.Time, lp.finishAt, remainingDuration.Round(time.Minute))
 
 	lp.chargeRequired = lp.finishAt.After(lp.Time)
 	lp.publish("socTimerActive", lp.chargeRequired)
 
-	return lp.chargeRequired
+	return lp.chargeRequired || true
 }
 
 // Handle adjusts current up/down to achieve desired target time
-func (lp TargetCharge) Handle() error {
+func (lp *SoCTimer) Handle() error {
 	current := lp.handler.TargetCurrent()
 
 	switch {
