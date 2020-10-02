@@ -209,15 +209,15 @@ func (lp *LoadPoint) SetTargetSoC(targetSoC int) {
 }
 
 // SetTargetCharge sets loadpoint charge targetSoC
-func (lp *LoadPoint) SetTargetCharge(finishAt time.Time, targetSoC int) {
+func (lp *LoadPoint) SetTargetCharge(targetSoC int, targetTime time.Time) {
 	lp.Lock()
 	defer lp.Unlock()
 
-	lp.log.INFO.Printf("set target charge: %d @ %v", targetSoC, finishAt)
+	lp.log.INFO.Printf("set target charge: %d @ %v", targetSoC, targetTime)
 
 	// apply immediately
 	// TODO check reset of targetSoC
-	lp.publish("targetTime", finishAt)
+	lp.publish("targetTime", targetTime)
 	lp.publish("targetSoC", targetSoC)
 
 	lp.requestUpdate()
@@ -473,7 +473,7 @@ func (lp *LoadPoint) detectPhases() {
 // it does not take measured currents into account
 func (lp *LoadPoint) effectiveCurrent() int64 {
 	if lp.status != api.StatusC {
-		return  0
+		return 0
 	}
 	return lp.handler.TargetCurrent()
 }
@@ -481,7 +481,7 @@ func (lp *LoadPoint) effectiveCurrent() int64 {
 // maxCurrent calculates the maximum target current for PV mode
 func (lp *LoadPoint) maxCurrent(mode api.ChargeMode, sitePower float64) int64 {
 	// calculate target charge current from delta power and actual current
-	effectiveCurrent:=lp.effectiveCurrent()
+	effectiveCurrent := lp.effectiveCurrent()
 	deltaCurrent := powerToCurrent(-sitePower, lp.Phases)
 	targetCurrent := clamp(effectiveCurrent+deltaCurrent, 0, lp.MaxCurrent)
 

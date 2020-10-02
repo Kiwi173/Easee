@@ -148,6 +148,14 @@ func (site *Site) SetTargetSoC(targetSoC int) {
 	}
 }
 
+// SetTargetCharge sets loadpoint charge targetSoC
+func (site *Site) SetTargetCharge(targetSoC int, targetTime time.Time) {
+	site.log.INFO.Printf("set global target charge: %d @ %v", targetSoC, targetTime)
+	for _, lp := range site.loadpoints {
+		lp.SetTargetCharge(targetSoC, targetTime)
+	}
+}
+
 // HasChargeMeter determines if a physical charge meter is attached
 func (lp *LoadPoint) HasChargeMeter() bool {
 	_, isWrapped := lp.chargeMeter.(*wrapper.ChargeMeter)
