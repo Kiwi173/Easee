@@ -56,7 +56,7 @@ func (lp *SoCTimer) StartRequired() bool {
 	// time
 	remainingDuration := lp.socEstimator.RemainingChargeDuration(power, lp.SoC)
 	lp.finishAt = time.Now().Add(remainingDuration).Round(time.Minute)
-	lp.log.DEBUG.Printf("target charging active for %v: projected %v (%v)", lp.Time, lp.finishAt, remainingDuration.Round(time.Minute))
+	lp.log.DEBUG.Printf("target charging active for %v: projected %v (%v remaining)", lp.Time, lp.finishAt, remainingDuration.Round(time.Minute))
 
 	lp.chargeRequired = lp.finishAt.After(lp.Time)
 	lp.publish("socTimerActive", lp.chargeRequired)
