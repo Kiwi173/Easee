@@ -469,13 +469,19 @@ func (lp *LoadPoint) detectPhases() {
 	}
 }
 
+// effectiveCurrent returns the currently effective charging current
+// it does not take measured currents into account
+func (lp *LoadPoint) effectiveCurrent() int64 {
+	if lp.status != api.StatusC {
+		return  0
+	}
+	return lp.handler.TargetCurrent()
+}
+
 // maxCurrent calculates the maximum target current for PV mode
 func (lp *LoadPoint) maxCurrent(mode api.ChargeMode, sitePower float64) int64 {
 	// calculate target charge current from delta power and actual current
-	effectiveCurrent := lp.handler.TargetCurrent()
-	if lp.status != api.StatusC {
-		effectiveCurrent = 0
-	}
+	effectiveCurrent:=lp.effectiveCurrent()
 	deltaCurrent := powerToCurrent(-sitePower, lp.Phases)
 	targetCurrent := clamp(effectiveCurrent+deltaCurrent, 0, lp.MaxCurrent)
 
