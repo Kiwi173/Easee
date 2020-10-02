@@ -21,8 +21,14 @@ func (lp *SoCTimer) Supported() bool {
 	return lp.socEstimator != nil
 }
 
-// Active returns true if there is an active target charging request
-func (lp *SoCTimer) Active() bool {
+// Reset resets the target charging request
+func (lp *SoCTimer) Reset() {
+	lp.Time = time.Time{}
+	lp.SoC = 0
+}
+
+// active returns true if there is an active target charging request
+func (lp *SoCTimer) active() bool {
 	inactive := lp.Time.IsZero() || lp.Time.Before(time.Now())
 	lp.publish("socTimerSet", !inactive)
 
@@ -35,14 +41,12 @@ func (lp *SoCTimer) Active() bool {
 	return !inactive
 }
 
-// Reset resets the target charging request
-func (lp *SoCTimer) Reset() {
-	lp.Time = time.Time{}
-	lp.SoC = 0
-}
-
 // StartRequired calculates remaining charge duration and returns true if charge start is required to achieve target soc in time
 func (lp *SoCTimer) StartRequired() bool {
+	if !lp.active() {
+		return false
+	}
+
 	current := lp.effectiveCurrent()
 
 	// use start current for calculation if currently not charging
@@ -61,11 +65,11 @@ func (lp *SoCTimer) StartRequired() bool {
 	lp.chargeRequired = lp.finishAt.After(lp.Time)
 	lp.publish("socTimerActive", lp.chargeRequired)
 
-	return lp.chargeRequired || true
+	return lp.chargeRequired
 }
 
 // Handle adjusts current up/down to achieve desired target time
-func (lp *SoCTimer) Handle() error {
+func (lp *SoCTimer) Handle(pvCurrent int64) error {
 	current := lp.handler.TargetCurrent()
 
 	switch {
@@ -76,6 +80,11 @@ func (lp *SoCTimer) Handle() error {
 	case lp.finishAt.After(lp.Time):
 		current++
 		lp.log.DEBUG.Printf("target charging: speedup")
+	}
+
+	// use higher-charging pv current if available
+	if current < pvCurrent {
+		current = pvCurrent
 	}
 
 	current = clamp(current, lp.MinCurrent, lp.MaxCurrent)

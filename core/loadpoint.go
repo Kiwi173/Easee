@@ -681,7 +681,6 @@ func (lp *LoadPoint) Update(sitePower float64) {
 	// check if car connected and ready for charging
 	var err error
 
-STRATEGY:
 	// execute loading strategy
 	switch {
 	case !lp.connected():
@@ -693,12 +692,13 @@ STRATEGY:
 		err = lp.handler.Ramp(0)
 		lp.socTimer.Reset() // once SoC is reached, the target charge request is removed
 
-	case lp.socTimer.Active():
-		if lp.socTimer.StartRequired() {
-			err = lp.socTimer.Handle()
-			break STRATEGY
+	case lp.socTimer.StartRequired():
+		var pvCurrent int64
+		// check if pv mode offers higher current
+		if mode == api.ModeMinPV || mode == api.ModePV {
+			pvCurrent = lp.maxCurrent(mode, sitePower)
 		}
-		fallthrough
+		err = lp.socTimer.Handle(pvCurrent)
 
 	case mode == api.ModeOff:
 		err = lp.handler.Ramp(0, true)
