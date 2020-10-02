@@ -150,7 +150,7 @@ func (site *Site) SetTargetSoC(targetSoC int) {
 
 // SetTargetCharge sets loadpoint charge targetSoC
 func (site *Site) SetTargetCharge(targetSoC int, targetTime time.Time) {
-	site.log.INFO.Printf("set global target charge: %d @ %v", targetSoC, targetTime)
+	site.log.INFO.Printf("set global target charge: %d%% @ %v", targetSoC, targetTime)
 	for _, lp := range site.loadpoints {
 		lp.SetTargetCharge(targetSoC, targetTime)
 	}

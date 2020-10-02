@@ -213,7 +213,7 @@ func (lp *LoadPoint) SetTargetCharge(targetSoC int, targetTime time.Time) {
 	lp.Lock()
 	defer lp.Unlock()
 
-	lp.log.INFO.Printf("set target charge: %d @ %v", targetSoC, targetTime)
+	lp.log.INFO.Printf("set target charge: %d%% @ %v", targetSoC, targetTime)
 
 	// apply immediately
 	// TODO check reset of targetSoC

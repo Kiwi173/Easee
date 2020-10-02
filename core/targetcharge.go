@@ -15,6 +15,11 @@ type TargetCharge struct {
 	finishAt time.Time
 }
 
+// Supported returns true if target charging is possible, i.e. the vehicle soc can be determined
+func (lp TargetCharge) Supported() bool {
+	return lp.socEstimator != nil
+}
+
 // Active returns true if there is an active target charging request
 func (lp TargetCharge) Active() bool {
 	inactive := lp.Time.IsZero() || lp.Time.Before(time.Now())
