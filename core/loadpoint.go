@@ -681,6 +681,7 @@ STRATEGY:
 
 	case lp.targetSocReached(lp.socCharge, float64(lp.TargetSoC)):
 		err = lp.handler.Ramp(0)
+		lp.TargetCharge.Reset() // once SoC is reached, the target charge request is removed
 
 	case lp.TargetCharge.Active():
 		lp.TargetCharge.LoadPoint = lp

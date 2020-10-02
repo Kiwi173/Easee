@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -221,6 +222,16 @@ func TargetSoCHandler(loadpoint loadpoint) http.HandlerFunc {
 	}
 }
 
+func timezone() *time.Location {
+	tz := os.Getenv("TZ")
+	if tz == "" {
+		tz = "Local"
+	}
+
+	loc, _ := time.LoadLocation(tz)
+	return loc
+}
+
 // TargetChargeHandler updates target soc
 func TargetChargeHandler(loadpoint loadpoint) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -230,14 +241,16 @@ func TargetChargeHandler(loadpoint loadpoint) http.HandlerFunc {
 		socV, err := strconv.ParseInt(socS, 10, 32)
 
 		if !ok || err != nil {
+			log.DEBUG.Printf("parse soc: %v", err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
 		timeS, ok := vars["time"]
-		timeV, err := time.Parse(time.RFC3339, timeS)
+		timeV, err := time.ParseInLocation("2006-01-02T15:04:05", timeS, timezone())
 
 		if !ok || err != nil {
+			log.DEBUG.Printf("parse time: %v", err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -285,7 +298,7 @@ func NewHTTPd(url string, links []MenuConfig, site site, hub *SocketHub, cache *
 		"setmode":         {[]string{"POST", "OPTIONS"}, "/mode/{mode:[a-z]+}", ChargeModeHandler(site)},
 		"gettargetsoc":    {[]string{"GET"}, "/targetsoc", CurrentTargetSoCHandler(site)},
 		"settargetsoc":    {[]string{"POST", "OPTIONS"}, "/targetsoc/{soc:[0-9]+}", TargetSoCHandler(site)},
-		"settargetcharge": {[]string{"POST", "OPTIONS"}, "/targetcharge/{soc:[0-9]+},{time:[0-9TZ:-]+}", TargetChargeHandler(site)},
+		"settargetcharge": {[]string{"POST", "OPTIONS"}, "/targetcharge/{soc:[0-9]+}/{time:[0-9TZ:-]+}", TargetChargeHandler(site)},
 	}
 
 	router := mux.NewRouter().StrictSlash(true)

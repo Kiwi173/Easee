@@ -8,9 +8,9 @@ const (
 )
 
 type TargetCharge struct {
-	Time time.Time
-	SoC  int
 	*LoadPoint
+	SoC      int
+	Time     time.Time
 	finishAt time.Time
 }
 
@@ -20,10 +20,14 @@ func (lp TargetCharge) Active() bool {
 	return !inactive
 }
 
+// Reset resets the target charging request
+func (lp TargetCharge) Reset() {
+	lp.Time = time.Time{}
+	lp.SoC = 0
+}
+
 // StartRequired calculates remaining charge duration and returns true if charge start is required to achieve target soc in time
 func (lp TargetCharge) StartRequired() bool {
-	// current/power
-
 	// if already charging continue to do so
 	if lp.effectiveCurrent() > 0 {
 		return true
