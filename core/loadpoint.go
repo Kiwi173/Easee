@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/andig/evcc/api"
+	"github.com/andig/evcc/core/soc"
 	"github.com/andig/evcc/core/wrapper"
 	"github.com/andig/evcc/push"
 	"github.com/andig/evcc/util"
@@ -76,8 +77,8 @@ type LoadPoint struct {
 
 	chargeMeter  api.Meter   // Charger usage meter
 	vehicle      api.Vehicle // Vehicle
-	socEstimator *wrapper.SocEstimator
-	socTimer     *SoCTimer
+	socEstimator *soc.Estimator
+	socTimer     *soc.Timer
 
 	// cached state
 	status        api.ChargeStatus // Charger status
@@ -116,10 +117,10 @@ func NewLoadPointFromConfig(log *util.Logger, cp configProvider, other map[strin
 	}
 	if lp.VehicleRef != "" {
 		lp.vehicle = cp.Vehicle(lp.VehicleRef)
-		lp.socEstimator = wrapper.NewSocEstimator(log, lp.vehicle, lp.SoC.Estimate)
+		lp.socEstimator = soc.NewEstimator(log, lp.vehicle, lp.SoC.Estimate)
 
 		// allow target charge handler to access loadpoint
-		lp.socTimer = &SoCTimer{LoadPoint: lp}
+		lp.socTimer = &soc.Timer{LoadPoint: lp}
 	}
 
 	if lp.ChargerRef == "" {

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/andig/evcc/api"
-	"github.com/andig/evcc/core/wrapper"
+	"github.com/andig/evcc/core/soc"
 	"github.com/andig/evcc/mock"
 	"github.com/andig/evcc/push"
 	"github.com/andig/evcc/util"
@@ -375,7 +375,7 @@ func TestDisableAndEnableAtTargetSoC(t *testing.T) {
 
 	// wrap vehicle with estimator
 	vehicle.EXPECT().Capacity().Return(int64(10))
-	socEstimator := wrapper.NewSocEstimator(util.NewLogger("foo"), vehicle, false)
+	socEstimator := soc.NewEstimator(util.NewLogger("foo"), vehicle, false)
 
 	lp := &LoadPoint{
 		log:         util.NewLogger("foo"),
