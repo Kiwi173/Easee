@@ -26,6 +26,11 @@ func (r vehicleRegistry) Get(name string) (func(map[string]interface{}) (api.Veh
 
 var registry vehicleRegistry = make(map[string]func(map[string]interface{}) (api.Vehicle, error))
 
+// Registry returns the module's registry singleton
+func Registry() vehicleRegistry {
+	return registry
+}
+
 // NewFromConfig creates vehicle from configuration
 func NewFromConfig(typ string, other map[string]interface{}) (v api.Vehicle, err error) {
 	factory, err := registry.Get(strings.ToLower(typ))

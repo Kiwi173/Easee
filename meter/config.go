@@ -26,6 +26,11 @@ func (r meterRegistry) Get(name string) (func(map[string]interface{}) (api.Meter
 
 var registry meterRegistry = make(map[string]func(map[string]interface{}) (api.Meter, error))
 
+// Registry returns the module's registry singleton
+func Registry() meterRegistry {
+	return registry
+}
+
 // NewFromConfig creates meter from configuration
 func NewFromConfig(typ string, other map[string]interface{}) (v api.Meter, err error) {
 	factory, err := registry.Get(strings.ToLower(typ))

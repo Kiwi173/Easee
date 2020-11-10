@@ -9,6 +9,7 @@ import (
 	"github.com/andig/evcc/server/updater"
 	"github.com/andig/evcc/util"
 	"github.com/andig/evcc/util/pipe"
+	"github.com/andig/evcc/util/plugin"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -131,15 +132,20 @@ func run(cmd *cobra.Command, args []string) {
 		configureMQTT(conf.Mqtt)
 	}
 
+	// load plugins
+	for _, p := range plugin.Find("*.plugin", "EVCCPlugin") {
+		plugin.Init(p)
+	}
+
+	// setup loadpoints
+	site := loadConfig(conf)
+
 	// start broadcasting values
 	tee := &Tee{}
 
 	// value cache
 	cache := util.NewCache()
 	go cache.Run(pipe.NewDropper(ignoreParams...).Pipe(tee.Attach()))
-
-	// setup loadpoints
-	site := loadConfig(conf)
 
 	// setup database
 	if conf.Influx.URL != "" {

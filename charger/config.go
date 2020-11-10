@@ -28,6 +28,11 @@ func (r chargerRegistry) Get(name string) (func(map[string]interface{}) (api.Cha
 
 var registry chargerRegistry = make(map[string]func(map[string]interface{}) (api.Charger, error))
 
+// Registry returns the module's registry singleton
+func Registry() chargerRegistry {
+	return registry
+}
+
 // NewFromConfig creates charger from configuration
 func NewFromConfig(typ string, other map[string]interface{}) (v api.Charger, err error) {
 	factory, err := registry.Get(strings.ToLower(typ))
