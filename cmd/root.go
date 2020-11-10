@@ -127,14 +127,14 @@ func run(cmd *cobra.Command, args []string) {
 	uri := viper.GetString("uri")
 	log.INFO.Println("listening at", uri)
 
-	// setup mqtt client listener
-	if conf.Mqtt.Broker != "" {
-		configureMQTT(conf.Mqtt)
-	}
-
 	// load plugins
 	for _, p := range plugin.Find("*.plugin", "EVCCPlugin") {
 		plugin.Init(p)
+	}
+
+	// setup mqtt client listener
+	if conf.Mqtt.Broker != "" {
+		configureMQTT(conf.Mqtt)
 	}
 
 	// setup loadpoints
