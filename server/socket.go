@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/andig/evcc/api/service"
 	"github.com/andig/evcc/util"
 	"github.com/gorilla/websocket"
 )
@@ -50,20 +51,6 @@ func (c *SocketClient) writePump() {
 	}
 }
 
-// ServeWebsocket handles websocket requests from the peer.
-func ServeWebsocket(hub *SocketHub, w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.ERROR.Println(err)
-		return
-	}
-	client := &SocketClient{hub: hub, conn: conn, send: make(chan []byte, 256)}
-	client.hub.register <- client
-
-	// run writing to client in goroutine
-	go client.writePump()
-}
-
 // SocketHub maintains the set of active clients and broadcasts messages to the
 // clients.
 type SocketHub struct {
@@ -79,12 +66,32 @@ type SocketHub struct {
 
 // NewSocketHub creates a web socket hub that distributes meter status and
 // query results for the ui or other clients
-func NewSocketHub() *SocketHub {
-	return &SocketHub{
+func NewSocketHub(httpd service.Httpd) *SocketHub {
+	h := &SocketHub{
 		register:   make(chan *SocketClient),
 		unregister: make(chan *SocketClient),
 		clients:    make(map[*SocketClient]bool),
 	}
+
+	// register handler
+	httpd.Router().HandleFunc("/ws", h.handleRequest)
+
+	return h
+}
+
+// handleRequest handles websocket requests from the peer.
+func (h *SocketHub) handleRequest(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.ERROR.Println(err)
+		return
+	}
+
+	client := &SocketClient{hub: h, conn: conn, send: make(chan []byte, 256)}
+	client.hub.register <- client
+
+	// run writing to client in goroutine
+	go client.writePump()
 }
 
 func encode(v interface{}) (string, error) {

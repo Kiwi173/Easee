@@ -185,8 +185,8 @@ func run(cmd *cobra.Command, args []string) {
 	}
 
 	// create webserver
-	socketHub := server.NewSocketHub()
-	httpd := server.NewHTTPd(uri, site, socketHub, cache)
+	httpd := server.NewHTTPd(uri, site, cache)
+	socketHub := server.NewSocketHub(httpd)
 
 	// metrics
 	if viper.GetBool("metrics") {

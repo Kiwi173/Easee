@@ -86,6 +86,7 @@ func jsonResponse(w http.ResponseWriter, r *http.Request, content interface{}) {
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(content); err != nil {
 		log.ERROR.Printf("httpd: failed to encode JSON: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -309,20 +310,14 @@ func TargetChargeHandler(loadpoint core.LoadPointAPI) http.HandlerFunc {
 	}
 }
 
-// SocketHandler attaches websocket handler to uri
-func SocketHandler(hub *SocketHub) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ServeWebsocket(hub, w, r)
-	}
-}
-
 // HTTPd wraps an http.Server and adds the root router
 type HTTPd struct {
 	*http.Server
+	api *mux.Router
 }
 
 // NewHTTPd creates HTTP server with configured routes for loadpoint
-func NewHTTPd(url string, site core.SiteAPI, hub *SocketHub, cache *util.Cache) *HTTPd {
+func NewHTTPd(url string, site core.SiteAPI, cache *util.Cache) *HTTPd {
 	routes := map[string]route{
 		"health":    {[]string{"GET"}, "/health", HealthHandler(site)},
 		"state":     {[]string{"GET"}, "/state", StateHandler(cache)},
@@ -330,9 +325,6 @@ func NewHTTPd(url string, site core.SiteAPI, hub *SocketHub, cache *util.Cache) 
 	}
 
 	router := mux.NewRouter().StrictSlash(true)
-
-	// websocket
-	router.HandleFunc("/ws", SocketHandler(hub))
 
 	// static - individual handlers per root and folders
 	static := router.PathPrefix("/").Subrouter()
@@ -393,12 +385,29 @@ func NewHTTPd(url string, site core.SiteAPI, hub *SocketHub, cache *util.Cache) 
 			IdleTimeout:  120 * time.Second,
 			ErrorLog:     log.ERROR,
 		},
+		api: api,
 	}
 	srv.SetKeepAlivesEnabled(true)
 
 	return srv
 }
 
+// Addr implements service.Httpd
+func (s *HTTPd) Addr() string {
+	return s.Server.Addr
+}
+
+// Version implements service.Httpd
+func (s *HTTPd) Version() string {
+	return Version
+}
+
+// Router implements service.Httpd
 func (s *HTTPd) Router() *mux.Router {
 	return s.Handler.(*mux.Router)
+}
+
+// APIRouter implements service.Httpd
+func (s *HTTPd) APIRouter() *mux.Router {
+	return s.api
 }

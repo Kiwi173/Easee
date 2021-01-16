@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/andig/evcc/api"
+	"github.com/andig/evcc/api/service"
 	"github.com/andig/evcc/core"
-	"github.com/andig/evcc/server"
 	"github.com/andig/evcc/util"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -31,10 +31,6 @@ const (
 	maxAge           = 1800
 )
 
-var (
-	serverName = "EVCC SEMP Server " + server.Version
-)
-
 // SEMP is the SMA SEMP server
 type SEMP struct {
 	log          *util.Logger
@@ -46,10 +42,11 @@ type SEMP struct {
 	hostURI      string
 	port         int
 	site         core.SiteAPI
+	serverName   string
 }
 
 // New generates SEMP Gateway listening at /semp endpoint
-func New(conf map[string]interface{}, site core.SiteAPI, cache *util.Cache, httpd *server.HTTPd) (*SEMP, error) {
+func New(conf map[string]interface{}, site core.SiteAPI, cache *util.Cache, httpd service.Httpd) (*SEMP, error) {
 	cc := struct {
 		AllowControl bool
 	}{}
@@ -70,10 +67,11 @@ func New(conf map[string]interface{}, site core.SiteAPI, cache *util.Cache, http
 		site:         site,
 		uid:          uid.String(),
 		controllable: cc.AllowControl,
+		serverName:   "EVCC SEMP Server " + httpd.Version(),
 	}
 
 	// find external port
-	_, port, err := net.SplitHostPort(httpd.Addr)
+	_, port, err := net.SplitHostPort(httpd.Addr())
 	if err == nil {
 		s.port, err = strconv.Atoi(port)
 	}
@@ -87,7 +85,7 @@ func New(conf map[string]interface{}, site core.SiteAPI, cache *util.Cache, http
 
 func (s *SEMP) advertise(st, usn string) *ssdp.Advertiser {
 	descriptor := s.hostURI + basePath + "/description.xml"
-	ad, err := ssdp.Advertise(st, usn, descriptor, serverName, maxAge)
+	ad, err := ssdp.Advertise(st, usn, descriptor, s.serverName, maxAge)
 	if err != nil {
 		s.log.ERROR.Println(err)
 	}
@@ -205,7 +203,7 @@ func (s *SEMP) gatewayDescription(w http.ResponseWriter, r *http.Request) {
 			DeviceType:      sempGateway,
 			FriendlyName:    "evcc",
 			Manufacturer:    "github.com/andig/evcc",
-			ModelName:       serverName,
+			ModelName:       s.serverName,
 			PresentationURL: s.hostURI,
 			UDN:             uid,
 			ServiceDefinition: ServiceDefinition{
