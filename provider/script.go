@@ -24,7 +24,7 @@ type Script struct {
 }
 
 func init() {
-	registry.Add("script", NewScriptProviderFromConfig)
+	registry.Add("script", "Shellskript", NewScriptProviderFromConfig, nil)
 }
 
 // NewScriptProviderFromConfig creates a script provider.

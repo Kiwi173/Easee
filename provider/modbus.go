@@ -24,7 +24,42 @@ type Modbus struct {
 }
 
 func init() {
-	registry.Add("modbus", NewModbusFromConfig)
+	registry.Add("modbus", "ModBus", NewModbusFromConfig, nil)
+
+	// TCP
+	registry.Add("modbus-tcp", "ModBus (TCP)", NewModbusFromConfig, struct {
+		Model  string `validate:"oneof=SMA Kostal Fronius SolarEdge Sunspec" ui:"de=Zählertyp"`
+		URI    string `validate:"required"`
+		ID     uint8  `ui:"de=ModBus Slave ID"`
+		RTU    *bool  `ui:"de=ModBus RTU Gerät"`
+		Power  string `validate:"required" ui:"de=Meßwert Leistung"`
+		Energy string `ui:"de=Meßwert Zählerstand (nur Ladezähler)"`
+		SoC    string `ui:"de=Meßwert Ladezustand (nur Batterien)"`
+	}{
+		Power: "Power",
+		ID:    1,
+	})
+
+	// Serial
+	isTrue := true
+	registry.Add("modbus-serial", "ModBus (Seriell)", NewModbusFromConfig, struct {
+		Model    string `validate:"oneof=ABB DZG IEM3000 INEPRO JANITZA MPM ORNO1P ORNO1P504 ORNO3P SBC SDM SDM220 SDM230 SDM72" ui:"de=Zählertyp"`
+		Device   string `validate:"required" ui:"de=Serielle Schnittstelle"`
+		Comset   string `validate:"required,oneof=8E1 8N1" ui:"de=Kommunikationseinstellungen"`
+		Baudrate int    `validate:"required,oneof=2400 9600 19200" ui:"de=Baudrate"`
+		ID       uint8  `ui:"de=ModBus Slave ID"`
+		RTU      *bool  `ui:",hide"`
+		Power    string `validate:"required" ui:"de=Meßwert Leistung"`
+		Energy   string `ui:"de=Meßwert Zählerstand (nur Ladezähler)"`
+		SoC      string `ui:"de=Meßwert Ladezustand (nur Batterien)"`
+	}{
+		Device:   "/dev/usb0",
+		Comset:   "8E1",
+		Baudrate: 9600,
+		Power:    "Power",
+		ID:       1,
+		RTU:      &isTrue,
+	})
 }
 
 // NewModbusFromConfig creates Modbus plugin

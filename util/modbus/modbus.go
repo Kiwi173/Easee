@@ -213,9 +213,9 @@ func RS485FindDeviceOp(device *rs485.RS485, measurement meters.Measurement) (op 
 
 // Register contains the ModBus register configuration
 type Register struct {
-	Address uint16 // Length  uint16
-	Type    string
-	Decode  string
+	Address uint16 `ui:"de=Adresse"`
+	Type    string `validate:"oneof Holding Input" ui:"de=Typ"`
+	Decode  string `validate:"oneof uint16 uint32 uint32s uint64 int16 int32 int32s float32 float32s float64" ui:"de=Kodierung"`
 }
 
 // RegisterOperation creates a read operation from a register definition
