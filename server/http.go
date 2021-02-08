@@ -11,6 +11,8 @@ import (
 
 	"github.com/andig/evcc/api"
 	"github.com/andig/evcc/core"
+	"github.com/andig/evcc/core/loadpoint"
+	"github.com/andig/evcc/core/site"
 	"github.com/andig/evcc/server/config"
 	"github.com/andig/evcc/util"
 	"github.com/gorilla/handlers"
@@ -49,7 +51,7 @@ func routeLogger(inner http.Handler) http.HandlerFunc {
 	}
 }
 
-func indexHandler(site core.SiteAPI, useLocal bool) http.HandlerFunc {
+func indexHandler(site site.API, useLocal bool) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=UTF-8")
 
@@ -91,7 +93,7 @@ func jsonResponse(w http.ResponseWriter, r *http.Request, content interface{}) {
 }
 
 // HealthHandler returns current charge mode
-func HealthHandler(site core.SiteAPI) http.HandlerFunc {
+func HealthHandler(site site.API) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !site.Healthy() {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -163,7 +165,7 @@ func StateHandler(cache *util.Cache) http.HandlerFunc {
 }
 
 // CurrentChargeModeHandler returns current charge mode
-func CurrentChargeModeHandler(loadpoint core.LoadPointAPI) http.HandlerFunc {
+func CurrentChargeModeHandler(loadpoint loadpoint.API) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		res := chargeModeJSON{Mode: loadpoint.GetMode()}
 		jsonResponse(w, r, res)
@@ -171,7 +173,7 @@ func CurrentChargeModeHandler(loadpoint core.LoadPointAPI) http.HandlerFunc {
 }
 
 // ChargeModeHandler updates charge mode
-func ChargeModeHandler(loadpoint core.LoadPointAPI) http.HandlerFunc {
+func ChargeModeHandler(loadpoint loadpoint.API) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 
@@ -190,7 +192,7 @@ func ChargeModeHandler(loadpoint core.LoadPointAPI) http.HandlerFunc {
 }
 
 // CurrentTargetSoCHandler returns current target soc
-func CurrentTargetSoCHandler(loadpoint core.LoadPointAPI) http.HandlerFunc {
+func CurrentTargetSoCHandler(loadpoint loadpoint.API) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		res := targetSoCJSON{TargetSoC: loadpoint.GetTargetSoC()}
 		jsonResponse(w, r, res)
@@ -198,7 +200,7 @@ func CurrentTargetSoCHandler(loadpoint core.LoadPointAPI) http.HandlerFunc {
 }
 
 // TargetSoCHandler updates target soc
-func TargetSoCHandler(loadpoint core.LoadPointAPI) http.HandlerFunc {
+func TargetSoCHandler(loadpoint loadpoint.API) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 
@@ -220,7 +222,7 @@ func TargetSoCHandler(loadpoint core.LoadPointAPI) http.HandlerFunc {
 }
 
 // CurrentMinSoCHandler returns current minimum soc
-func CurrentMinSoCHandler(loadpoint core.LoadPointAPI) http.HandlerFunc {
+func CurrentMinSoCHandler(loadpoint loadpoint.API) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		res := minSoCJSON{MinSoC: loadpoint.GetMinSoC()}
 		jsonResponse(w, r, res)
@@ -228,7 +230,7 @@ func CurrentMinSoCHandler(loadpoint core.LoadPointAPI) http.HandlerFunc {
 }
 
 // MinSoCHandler updates minimum soc
-func MinSoCHandler(loadpoint core.LoadPointAPI) http.HandlerFunc {
+func MinSoCHandler(loadpoint loadpoint.API) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 
@@ -251,7 +253,7 @@ func MinSoCHandler(loadpoint core.LoadPointAPI) http.HandlerFunc {
 }
 
 // RemoteDemandHandler updates minimum soc
-func RemoteDemandHandler(loadpoint core.LoadPointAPI) http.HandlerFunc {
+func RemoteDemandHandler(loadpoint loadpoint.API) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 
@@ -294,7 +296,7 @@ func timezone() *time.Location {
 }
 
 // TargetChargeHandler updates target soc
-func TargetChargeHandler(loadpoint core.LoadPointAPI) http.HandlerFunc {
+func TargetChargeHandler(loadpoint loadpoint.API) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 

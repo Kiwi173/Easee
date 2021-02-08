@@ -1,10 +1,11 @@
-package core
+package loadpoint
 
 import (
 	"testing"
 	"time"
 
 	"github.com/andig/evcc/api"
+	"github.com/andig/evcc/core"
 	"github.com/andig/evcc/core/soc"
 	"github.com/andig/evcc/mock"
 	"github.com/andig/evcc/push"
@@ -34,7 +35,7 @@ func (n *Null) ChargingTime() (time.Duration, error) {
 }
 
 func attachListeners(t *testing.T, lp *LoadPoint) {
-	Voltage = 230 // V
+	core.Voltage = 230 // V
 
 	uiChan := make(chan util.Param)
 	pushChan := make(chan push.Event)
@@ -66,6 +67,10 @@ func attachListeners(t *testing.T, lp *LoadPoint) {
 	}
 
 	lp.Prepare(uiChan, pushChan, lpChan)
+}
+
+func TestApi(t *testing.T) {
+	var _ API = NewLoadPoint(util.NewLogger("foo"))
 }
 
 func TestNew(t *testing.T) {
@@ -151,7 +156,7 @@ func TestUpdatePowerZero(t *testing.T) {
 			chargeMeter: &Null{}, // silence nil panics
 			chargeRater: &Null{}, // silence nil panics
 			chargeTimer: &Null{}, // silence nil panics
-			LoadPointConfig: LoadPointConfig{
+			Config: Config{
 				MinCurrent: minA,
 				MaxCurrent: maxA,
 				Phases:     1,
@@ -288,12 +293,12 @@ func TestPVHysteresis(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			charger := mock.NewMockCharger(ctrl)
 
-			Voltage = 100
+			core.Voltage = 100
 			lp := &LoadPoint{
 				log:     util.NewLogger("foo"),
 				clock:   clck,
 				charger: charger,
-				LoadPointConfig: LoadPointConfig{
+				Config: Config{
 					Phases:     10,
 					MinCurrent: minA,
 					MaxCurrent: maxA,
@@ -336,11 +341,11 @@ func TestPVHysteresisForStatusOtherThanC(t *testing.T) {
 	clck := clock.NewMock()
 	ctrl := gomock.NewController(t)
 
-	Voltage = 100
+	core.Voltage = 100
 	lp := &LoadPoint{
 		log:   util.NewLogger("foo"),
 		clock: clck,
-		LoadPointConfig: LoadPointConfig{
+		Config: Config{
 			Phases:     10,
 			MinCurrent: minA,
 			MaxCurrent: maxA,
@@ -353,7 +358,7 @@ func TestPVHysteresisForStatusOtherThanC(t *testing.T) {
 	// maxCurrent will read actual current in PV mode
 
 	// maxCurrent will read enabled state in PV mode
-	sitePower := -float64(minA*lp.Phases)*Voltage + 1 // 1W below min power
+	sitePower := -float64(minA*lp.Phases)*core.Voltage + 1 // 1W below min power
 	current := lp.pvMaxCurrent(api.ModePV, sitePower)
 
 	if current != 0 {
@@ -383,7 +388,7 @@ func TestDisableAndEnableAtTargetSoC(t *testing.T) {
 		chargeTimer:  &Null{},      // silence nil panics
 		vehicle:      vehicle,      // needed for targetSoC check
 		socEstimator: socEstimator, // instead of vehicle: vehicle,
-		LoadPointConfig: LoadPointConfig{
+		Config: Config{
 			Mode:       api.ModeNow,
 			MinCurrent: minA,
 			MaxCurrent: maxA,
@@ -454,7 +459,7 @@ func TestSetModeAndSocAtDisconnect(t *testing.T) {
 		chargeMeter: &Null{}, // silence nil panics
 		chargeRater: &Null{}, // silence nil panics
 		chargeTimer: &Null{}, // silence nil panics
-		LoadPointConfig: LoadPointConfig{
+		Config: Config{
 			MinCurrent: minA,
 			MaxCurrent: maxA,
 			OnDisconnect: struct {
@@ -528,7 +533,7 @@ func TestChargedEnergyAtDisconnect(t *testing.T) {
 		chargeMeter: &Null{}, // silence nil panics
 		chargeRater: rater,
 		chargeTimer: &Null{}, // silence nil panics
-		LoadPointConfig: LoadPointConfig{
+		Config: Config{
 			MinCurrent: minA,
 			MaxCurrent: maxA,
 		},
@@ -620,7 +625,7 @@ func TestTargetSoC(t *testing.T) {
 
 		lp := &LoadPoint{
 			vehicle: tc.vehicle,
-			LoadPointConfig: LoadPointConfig{
+			Config: Config{
 				SoC: SoCConfig{
 					Target: tc.target,
 				},
@@ -641,7 +646,7 @@ func TestSoCPoll(t *testing.T) {
 	lp := &LoadPoint{
 		clock: clock,
 		log:   util.NewLogger("foo"),
-		LoadPointConfig: LoadPointConfig{
+		Config: Config{
 			SoC: SoCConfig{
 				Poll: PollConfig{
 					Interval: time.Hour,
@@ -741,7 +746,7 @@ func TestMinSoC(t *testing.T) {
 
 		lp := &LoadPoint{
 			vehicle: tc.vehicle,
-			LoadPointConfig: LoadPointConfig{
+			Config: Config{
 				SoC: SoCConfig{
 					Min: tc.min,
 				},

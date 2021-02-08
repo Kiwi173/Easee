@@ -1,4 +1,4 @@
-package core
+package site
 
 import (
 	"encoding/json"
@@ -14,7 +14,7 @@ func (s *Site) RegisterConfigHandler(router *mux.Router) {
 	router.PathPrefix("/site").HandlerFunc(s.configHandler)
 
 	for idx, lp := range s.loadpoints {
-		router.PathPrefix(fmt.Sprintf("/loadpoints/%d", idx)).HandlerFunc(lp.configHandler)
+		router.PathPrefix(fmt.Sprintf("/loadpoints/%d", idx)).HandlerFunc(lp.ConfigHandler)
 	}
 }
 
@@ -30,7 +30,7 @@ func (s *Site) configHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Site) getConfig(w http.ResponseWriter, r *http.Request) {
-	if err := json.NewEncoder(w).Encode(s.SiteConfig); err != nil {
+	if err := json.NewEncoder(w).Encode(s.Config); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -39,11 +39,10 @@ func (s *Site) setConfig(w http.ResponseWriter, r *http.Request) {
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 
-	err := dec.Decode(&s.SiteConfig)
-	if err != nil {
+	if err := dec.Decode(&s.Config); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	s.log.FATAL.Println(structs.Map(s.SiteConfig))
+	s.log.FATAL.Println(structs.Map(s.Config))
 }

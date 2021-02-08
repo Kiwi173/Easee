@@ -1,14 +1,15 @@
-package core
+package loadpoint
 
 import (
 	"time"
 
 	"github.com/andig/evcc/api"
+	"github.com/andig/evcc/core"
 	"github.com/andig/evcc/core/wrapper"
 )
 
-// LoadPointAPI is the external loadpoint API
-type LoadPointAPI interface {
+// API is the external loadpoint API
+type API interface {
 	Name() string
 	HasChargeMeter() bool
 
@@ -20,7 +21,7 @@ type LoadPointAPI interface {
 	GetMinSoC() int
 	SetMinSoC(int) error
 	SetTargetCharge(time.Time, int)
-	RemoteControl(string, RemoteDemand)
+	RemoteControl(string, core.RemoteDemand)
 
 	// energy
 	GetMinCurrent() int64
@@ -123,7 +124,7 @@ func (lp *LoadPoint) SetTargetCharge(finishAt time.Time, targetSoC int) {
 }
 
 // RemoteControl sets remote status demand
-func (lp *LoadPoint) RemoteControl(source string, demand RemoteDemand) {
+func (lp *LoadPoint) RemoteControl(source string, demand core.RemoteDemand) {
 	lp.Lock()
 	defer lp.Unlock()
 
@@ -158,10 +159,10 @@ func (lp *LoadPoint) GetMaxCurrent() int64 {
 
 // GetMinPower returns the minimal loadpoint power for a single phase
 func (lp *LoadPoint) GetMinPower() int64 {
-	return int64(Voltage) * lp.MinCurrent
+	return int64(core.Voltage) * lp.MinCurrent
 }
 
 // GetMaxPower returns the minimal loadpoint power taking active phases into account
 func (lp *LoadPoint) GetMaxPower() int64 {
-	return int64(Voltage) * lp.Phases * lp.MaxCurrent
+	return int64(core.Voltage) * lp.Phases * lp.MaxCurrent
 }

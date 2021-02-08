@@ -1,4 +1,4 @@
-package core
+package site
 
 import (
 	"sync/atomic"

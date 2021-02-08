@@ -1,4 +1,4 @@
-package core
+package site
 
 import (
 	"errors"
@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/andig/evcc/api"
+	"github.com/andig/evcc/core"
+	"github.com/andig/evcc/core/loadpoint"
 	"github.com/andig/evcc/push"
 	"github.com/andig/evcc/util"
 	"github.com/avast/retry-go"
@@ -23,7 +25,7 @@ type Updater interface {
 // Site is the main configuration container. A site can host multiple loadpoints.
 type Site struct {
 	uiChan       chan<- util.Param // client push messages
-	lpUpdateChan chan *LoadPoint
+	lpUpdateChan chan *loadpoint.LoadPoint
 
 	*Health
 
@@ -31,15 +33,15 @@ type Site struct {
 	log *util.Logger
 
 	// configuration
-	SiteConfig `mapstructure:",squash"` // general
-	Meters     MetersConfig             // Meter references
+	Config `mapstructure:",squash"` // general
+	Meters MetersConfig             // Meter references
 
 	// meters
 	gridMeter    api.Meter // Grid usage meter
 	pvMeter      api.Meter // PV generation meter
 	batteryMeter api.Meter // Battery charging meter
 
-	loadpoints []*LoadPoint // Loadpoints
+	loadpoints []*loadpoint.LoadPoint // Loadpoints
 
 	// cached state
 	gridPower    float64 // Grid power
@@ -47,8 +49,8 @@ type Site struct {
 	batteryPower float64 // Battery charge power
 }
 
-// SiteConfig contains the site's public configuration
-type SiteConfig struct {
+// Config contains the site's public configuration
+type Config struct {
 	Title         string  `mapstructure:"title"`         // UI title
 	ResidualPower float64 `mapstructure:"residualPower"` // PV meter only: household usage. Grid meter: household safety margin
 	PrioritySoC   float64 `mapstructure:"prioritySoC"`   // prefer battery up to this SoC
@@ -61,12 +63,12 @@ type MetersConfig struct {
 	BatteryMeterRef string `mapstructure:"battery"` // Battery charging meter reference
 }
 
-// NewSiteFromConfig creates a new site
-func NewSiteFromConfig(
+// NewFromConfig creates a new site
+func NewFromConfig(
 	log *util.Logger,
-	cp configProvider,
+	cp core.ConfigProvider,
 	other map[string]interface{},
-	loadpoints []*LoadPoint,
+	loadpoints []*loadpoint.LoadPoint,
 ) (*Site, error) {
 	site := NewSite()
 	if err := util.DecodeOther(other, &site); err != nil {
@@ -106,26 +108,12 @@ func NewSite() *Site {
 }
 
 // LoadPoints returns the array of associated loadpoints
-func (site *Site) LoadPoints() []LoadPointAPI {
-	res := make([]LoadPointAPI, len(site.loadpoints))
+func (site *Site) LoadPoints() []loadpoint.API {
+	res := make([]loadpoint.API, len(site.loadpoints))
 	for id, lp := range site.loadpoints {
 		res[id] = lp
 	}
 	return res
-}
-
-func meterCapabilities(name string, meter interface{}) string {
-	_, power := meter.(api.Meter)
-	_, energy := meter.(api.MeterEnergy)
-	_, currents := meter.(api.MeterCurrent)
-
-	name += ":"
-	return fmt.Sprintf("    %-8s power %s energy %s currents %s",
-		name,
-		presence[power],
-		presence[energy],
-		presence[currents],
-	)
 }
 
 // DumpConfig site configuration
@@ -134,27 +122,27 @@ func (site *Site) DumpConfig() {
 
 	site.log.INFO.Println("site config:")
 	site.log.INFO.Printf("  meters:    grid %s pv %s battery %s",
-		presence[site.gridMeter != nil],
-		presence[site.pvMeter != nil],
-		presence[site.batteryMeter != nil],
+		core.Presence[site.gridMeter != nil],
+		core.Presence[site.pvMeter != nil],
+		core.Presence[site.batteryMeter != nil],
 	)
 
 	site.publish("gridConfigured", site.gridMeter != nil)
 	if site.gridMeter != nil {
-		site.log.INFO.Println(meterCapabilities("grid", site.gridMeter))
+		site.log.INFO.Println(core.MeterCapabilities("grid", site.gridMeter))
 	}
 
 	site.publish("pvConfigured", site.pvMeter != nil)
 	if site.pvMeter != nil {
-		site.log.INFO.Println(meterCapabilities("pv", site.pvMeter))
+		site.log.INFO.Println(core.MeterCapabilities("pv", site.pvMeter))
 	}
 
 	site.publish("batteryConfigured", site.batteryMeter != nil)
 	if site.batteryMeter != nil {
 		_, ok := site.batteryMeter.(api.Battery)
 		site.log.INFO.Println(
-			meterCapabilities("battery", site.batteryMeter),
-			fmt.Sprintf("soc %s", presence[ok]),
+			core.MeterCapabilities("battery", site.batteryMeter),
+			fmt.Sprintf("soc %s", core.Presence[ok]),
 		)
 
 		if ok {
@@ -162,41 +150,8 @@ func (site *Site) DumpConfig() {
 		}
 	}
 
-	for i, lp := range site.loadpoints {
-		lp.log.INFO.Printf("loadpoint %d:", i+1)
-
-		lp.log.INFO.Printf("  mode:      %s", lp.GetMode())
-
-		_, power := lp.charger.(api.Meter)
-		_, energy := lp.charger.(api.MeterEnergy)
-		_, currents := lp.charger.(api.MeterCurrent)
-		_, timer := lp.charger.(api.ChargeTimer)
-
-		lp.log.INFO.Printf("  charger:   power %s energy %s currents %s timer %s",
-			presence[power],
-			presence[energy],
-			presence[currents],
-			presence[timer],
-		)
-
-		lp.log.INFO.Printf("  meters:    charge %s", presence[lp.HasChargeMeter()])
-
-		lp.publish("chargeConfigured", lp.HasChargeMeter())
-		if lp.HasChargeMeter() {
-			lp.log.INFO.Printf(meterCapabilities("charge", lp.chargeMeter))
-		}
-
-		lp.log.INFO.Printf("  vehicles:  %s", presence[len(lp.vehicles) > 0])
-
-		for i, v := range lp.vehicles {
-			_, rng := v.(api.VehicleRange)
-			_, finish := v.(api.VehicleFinishTimer)
-			_, status := v.(api.VehicleStatus)
-			_, climate := v.(api.VehicleClimater)
-			lp.log.INFO.Printf("    car %d:   range %s finish %s status %s climate %s",
-				i, presence[rng], presence[finish], presence[status], presence[climate],
-			)
-		}
+	for id, lp := range site.loadpoints {
+		lp.DumpConfig(id)
 	}
 }
 
@@ -237,7 +192,7 @@ func (site *Site) updateMeters() error {
 
 		err := retry.Do(func() error {
 			return site.updateMeter(s, m, f)
-		}, retryOptions...)
+		}, core.RetryOptions...)
 
 		if err != nil {
 			err = fmt.Errorf("updating %s meter: %v", s, err)
@@ -318,7 +273,7 @@ func (site *Site) update(lp Updater) {
 // Prepare attaches communication channels to site and loadpoints
 func (site *Site) Prepare(uiChan chan<- util.Param, pushChan chan<- push.Event) {
 	site.uiChan = uiChan
-	site.lpUpdateChan = make(chan *LoadPoint, 1) // 1 capacity to avoid deadlock
+	site.lpUpdateChan = make(chan *loadpoint.LoadPoint, 1) // 1 capacity to avoid deadlock
 
 	for id, lp := range site.loadpoints {
 		lpUIChan := make(chan util.Param)

@@ -4,6 +4,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/andig/evcc/core"
 	"github.com/andig/evcc/util"
 )
 
@@ -16,7 +17,6 @@ type Adapter interface {
 	Publish(key string, val interface{})
 	SocEstimator() *Estimator
 	ActivePhases() int64
-	Voltage() float64
 }
 
 // Timer is the target charging handler
@@ -64,7 +64,7 @@ func (lp *Timer) StartRequired() bool {
 		return false
 	}
 
-	power := float64(lp.maxCurrent*lp.ActivePhases()) * lp.Voltage()
+	power := float64(lp.maxCurrent*lp.ActivePhases()) * core.Voltage
 
 	// time
 	remainingDuration := se.RemainingChargeDuration(power, lp.SoC)

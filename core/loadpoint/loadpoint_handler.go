@@ -1,4 +1,4 @@
-package core
+package loadpoint
 
 import (
 	"encoding/json"
@@ -7,7 +7,7 @@ import (
 	"github.com/fatih/structs"
 )
 
-func (s *LoadPoint) configHandler(w http.ResponseWriter, r *http.Request) {
+func (s *LoadPoint) ConfigHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		s.getConfig(w, r)
@@ -19,7 +19,7 @@ func (s *LoadPoint) configHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *LoadPoint) getConfig(w http.ResponseWriter, r *http.Request) {
-	if err := json.NewEncoder(w).Encode(s.LoadPointConfig); err != nil {
+	if err := json.NewEncoder(w).Encode(s.Config); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -28,11 +28,10 @@ func (s *LoadPoint) setConfig(w http.ResponseWriter, r *http.Request) {
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 
-	err := dec.Decode(&s.LoadPointConfig)
-	if err != nil {
+	if err := dec.Decode(&s.Config); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	s.log.FATAL.Println(structs.Map(s.LoadPointConfig))
+	s.log.FATAL.Println(structs.Map(s.Config))
 }

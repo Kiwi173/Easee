@@ -1,4 +1,4 @@
-package core
+package loadpoint
 
 import "github.com/andig/evcc/core/soc"
 
@@ -20,8 +20,4 @@ func (a *adapter) SocEstimator() *soc.Estimator {
 
 func (a *adapter) ActivePhases() int64 {
 	return a.lp.Phases
-}
-
-func (a *adapter) Voltage() float64 {
-	return Voltage
 }

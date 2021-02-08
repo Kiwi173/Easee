@@ -7,7 +7,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/andig/evcc/core"
+	"github.com/andig/evcc/core/loadpoint"
+	"github.com/andig/evcc/core/site"
 	"github.com/andig/evcc/hems"
 	"github.com/andig/evcc/provider/javascript"
 	"github.com/andig/evcc/provider/mqtt"
@@ -25,7 +26,7 @@ func init() {
 var cp = &ConfigProvider{}
 
 // setup influx databases
-func configureDatabase(conf server.InfluxConfig, loadPoints []core.LoadPointAPI, in <-chan util.Param) {
+func configureDatabase(conf server.InfluxConfig, loadPoints []loadpoint.API, in <-chan util.Param) {
 	influx := server.NewInfluxClient(
 		conf.URL,
 		conf.Token,
@@ -66,7 +67,7 @@ func configureJavascript(conf map[string]interface{}) {
 }
 
 // setup HEMS
-func configureHEMS(conf typedConfig, site *core.Site, cache *util.Cache, httpd *server.HTTPd) hems.HEMS {
+func configureHEMS(conf typedConfig, site *site.Site, cache *util.Cache, httpd *server.HTTPd) hems.HEMS {
 	hems, err := hems.NewFromConfig(conf.Type, conf.Other, site, cache, httpd)
 	if err != nil {
 		log.FATAL.Fatalf("failed configuring hems: %v", err)
@@ -93,9 +94,9 @@ func configureMessengers(conf messagingConfig, cache *util.Cache) chan push.Even
 	return notificationChan
 }
 
-func loadConfig(conf config) (site *core.Site, err error) {
+func loadConfig(conf config) (site *site.Site, err error) {
 	if err = cp.configure(conf); err == nil {
-		var loadPoints []*core.LoadPoint
+		var loadPoints []*loadpoint.LoadPoint
 		loadPoints, err = configureLoadPoints(conf, cp)
 
 		if err == nil {
@@ -106,16 +107,16 @@ func loadConfig(conf config) (site *core.Site, err error) {
 	return site, err
 }
 
-func configureSite(conf map[string]interface{}, cp *ConfigProvider, loadPoints []*core.LoadPoint) (*core.Site, error) {
-	site, err := core.NewSiteFromConfig(log, cp, conf, loadPoints)
+func configureSite(conf map[string]interface{}, cp *ConfigProvider, loadPoints []*loadpoint.LoadPoint) (*site.Site, error) {
+	s, err := site.NewFromConfig(log, cp, conf, loadPoints)
 	if err != nil {
 		return nil, fmt.Errorf("failed configuring site: %w", err)
 	}
 
-	return site, nil
+	return s, nil
 }
 
-func configureLoadPoints(conf config, cp *ConfigProvider) (loadPoints []*core.LoadPoint, err error) {
+func configureLoadPoints(conf config, cp *ConfigProvider) (loadPoints []*loadpoint.LoadPoint, err error) {
 	lpInterfaces, ok := viper.AllSettings()["loadpoints"].([]interface{})
 	if !ok || len(lpInterfaces) == 0 {
 		return nil, errors.New("missing loadpoints")
@@ -128,7 +129,7 @@ func configureLoadPoints(conf config, cp *ConfigProvider) (loadPoints []*core.Lo
 		}
 
 		log := util.NewLogger("lp-" + strconv.Itoa(id+1))
-		lp, err := core.NewLoadPointFromConfig(log, cp, lpc)
+		lp, err := loadpoint.NewFromConfig(log, cp, lpc)
 		if err != nil {
 			return nil, fmt.Errorf("failed configuring loadpoint: %w", err)
 		}

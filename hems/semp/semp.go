@@ -12,6 +12,8 @@ import (
 
 	"github.com/andig/evcc/api"
 	"github.com/andig/evcc/core"
+	"github.com/andig/evcc/core/loadpoint"
+	"github.com/andig/evcc/core/site"
 	"github.com/andig/evcc/server"
 	"github.com/andig/evcc/util"
 	"github.com/google/uuid"
@@ -44,11 +46,11 @@ type SEMP struct {
 	uid          string
 	hostURI      string
 	port         int
-	site         core.SiteAPI
+	site         site.API
 }
 
 // New generates SEMP Gateway listening at /semp endpoint
-func New(conf map[string]interface{}, site core.SiteAPI, cache *util.Cache, httpd *server.HTTPd) (*SEMP, error) {
+func New(conf map[string]interface{}, site site.API, cache *util.Cache, httpd *server.HTTPd) (*SEMP, error) {
 	cc := struct {
 		AllowControl bool
 	}{}
@@ -310,7 +312,7 @@ func (s *SEMP) deviceID(id int) string {
 	return fmt.Sprintf(sempLocalDevice, s.serialNumber(), id)
 }
 
-func (s *SEMP) deviceInfo(id int, lp core.LoadPointAPI) DeviceInfo {
+func (s *SEMP) deviceInfo(id int, lp loadpoint.API) DeviceInfo {
 	method := MethodEstimation
 	if lp.HasChargeMeter() {
 		method = MethodMeasurement
@@ -346,7 +348,7 @@ func (s *SEMP) allDeviceInfo() (res []DeviceInfo) {
 	return res
 }
 
-func (s *SEMP) deviceStatus(id int, lp core.LoadPointAPI) DeviceStatus {
+func (s *SEMP) deviceStatus(id int, lp loadpoint.API) DeviceStatus {
 	var chargePower float64
 	if chargePowerP, err := s.cache.GetChecked(id, "chargePower"); err == nil {
 		chargePower = chargePowerP.Val.(float64)
@@ -387,7 +389,7 @@ func (s *SEMP) allDeviceStatus() (res []DeviceStatus) {
 	return res
 }
 
-func (s *SEMP) planningRequest(id int, lp core.LoadPointAPI) (res PlanningRequest) {
+func (s *SEMP) planningRequest(id int, lp loadpoint.API) (res PlanningRequest) {
 	mode := api.ModeOff
 	if modeP, err := s.cache.GetChecked(id, "mode"); err == nil {
 		mode = modeP.Val.(api.ChargeMode)

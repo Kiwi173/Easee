@@ -1,4 +1,4 @@
-package core
+package loadpoint
 
 import (
 	"errors"
@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/andig/evcc/api"
+	"github.com/andig/evcc/core"
 	"github.com/andig/evcc/core/soc"
 	"github.com/andig/evcc/core/wrapper"
 	"github.com/andig/evcc/push"
@@ -75,11 +76,11 @@ type LoadPoint struct {
 	// exposed public configuration
 	sync.Mutex // guard status
 
-	LoadPointConfig `mapstructure:",squash"`
-	ChargerRef      string   `mapstructure:"charger"`  // Charger reference
-	VehicleRef      string   `mapstructure:"vehicle"`  // Vehicle reference
-	VehiclesRef     []string `mapstructure:"vehicles"` // Vehicles reference
-	Meters          struct {
+	Config      `mapstructure:",squash"`
+	ChargerRef  string   `mapstructure:"charger"`  // Charger reference
+	VehicleRef  string   `mapstructure:"vehicle"`  // Vehicle reference
+	VehiclesRef []string `mapstructure:"vehicles"` // Vehicles reference
+	Meters      struct {
 		ChargeMeterRef string `mapstructure:"charge"` // Charge meter reference
 	}
 
@@ -99,19 +100,19 @@ type LoadPoint struct {
 	socTimer     *soc.Timer
 
 	// cached state
-	status        api.ChargeStatus // Charger status
-	remoteDemand  RemoteDemand     // External status demand
-	chargePower   float64          // Charging power
-	connectedTime time.Time        // Time when vehicle was connected
-	pvTimer       time.Time        // PV enabled/disable timer
+	status        api.ChargeStatus  // Charger status
+	remoteDemand  core.RemoteDemand // External status demand
+	chargePower   float64           // Charging power
+	connectedTime time.Time         // Time when vehicle was connected
+	pvTimer       time.Time         // PV enabled/disable timer
 
 	socCharge      float64       // Vehicle SoC
 	chargedEnergy  float64       // Charged energy while connected in Wh
 	chargeDuration time.Duration // Charge duration
 }
 
-// LoadPointConfig contains the loadpoint's public configuration
-type LoadPointConfig struct {
+// Config contains the loadpoint's public configuration
+type Config struct {
 	Title      string         `mapstructure:"title"`      // UI title
 	Mode       api.ChargeMode `mapstructure:"mode"`       // Charge mode, guarded by mutex
 	Phases     int64          `mapstructure:"phases"`     // Phases- required for converting power and current
@@ -128,8 +129,8 @@ type LoadPointConfig struct {
 	GuardDuration time.Duration // charger enable/disable minimum holding time
 }
 
-// NewLoadPointFromConfig creates a new loadpoint
-func NewLoadPointFromConfig(log *util.Logger, cp configProvider, other map[string]interface{}) (*LoadPoint, error) {
+// NewFromConfig creates a new loadpoint
+func NewFromConfig(log *util.Logger, cp core.ConfigProvider, other map[string]interface{}) (*LoadPoint, error) {
 	lp := NewLoadPoint(log)
 	if err := util.DecodeOther(other, &lp); err != nil {
 		return nil, err
@@ -218,7 +219,7 @@ func NewLoadPoint(log *util.Logger) *LoadPoint {
 		clock:  clock, // mockable time
 		bus:    bus,   // event bus
 		status: api.StatusNone,
-		LoadPointConfig: LoadPointConfig{
+		Config: Config{
 			Mode:          api.ModeOff,
 			Phases:        1,
 			MinCurrent:    6,  // A
@@ -228,6 +229,43 @@ func NewLoadPoint(log *util.Logger) *LoadPoint {
 	}
 
 	return lp
+}
+
+func (lp *LoadPoint) DumpConfig(id int) {
+	lp.log.INFO.Printf("loadpoint %d:", id+1)
+
+	lp.log.INFO.Printf("  mode:      %s", lp.GetMode())
+
+	_, power := lp.charger.(api.Meter)
+	_, energy := lp.charger.(api.MeterEnergy)
+	_, currents := lp.charger.(api.MeterCurrent)
+	_, timer := lp.charger.(api.ChargeTimer)
+
+	lp.log.INFO.Printf("  charger:   power %s energy %s currents %s timer %s",
+		core.Presence[power],
+		core.Presence[energy],
+		core.Presence[currents],
+		core.Presence[timer],
+	)
+
+	lp.log.INFO.Printf("  meters:    charge %s", core.Presence[lp.HasChargeMeter()])
+
+	lp.publish("chargeConfigured", lp.HasChargeMeter())
+	if lp.HasChargeMeter() {
+		lp.log.INFO.Printf(core.MeterCapabilities("charge", lp.chargeMeter))
+	}
+
+	lp.log.INFO.Printf("  vehicles:  %s", core.Presence[len(lp.vehicles) > 0])
+
+	for i, v := range lp.vehicles {
+		_, rng := v.(api.VehicleRange)
+		_, finish := v.(api.VehicleFinishTimer)
+		_, status := v.(api.VehicleStatus)
+		_, climate := v.(api.VehicleClimater)
+		lp.log.INFO.Printf("    car %d:   range %s finish %s status %s climate %s",
+			i, core.Presence[rng], core.Presence[finish], core.Presence[status], core.Presence[climate],
+		)
+	}
 }
 
 // requestUpdate requests site to update this loadpoint
@@ -365,7 +403,7 @@ func (lp *LoadPoint) evChargeCurrentHandler(current float64) {
 // If physical charge meter is present this handler is not used.
 // The actual value is published by the evChargeCurrentHandler
 func (lp *LoadPoint) evChargeCurrentWrappedMeterHandler(current float64) {
-	power := current * float64(lp.Phases) * Voltage
+	power := current * float64(lp.Phases) * core.Voltage
 
 	if !lp.enabled || lp.status != api.StatusC {
 		// if disabled we cannot be charging
@@ -469,17 +507,17 @@ func (lp *LoadPoint) setLimit(chargeCurrent float64, force bool) (err error) {
 	// set enabled
 	if enabled := chargeCurrent >= float64(lp.MinCurrent); enabled != lp.enabled && err == nil {
 		if remaining := (lp.GuardDuration - lp.clock.Since(lp.guardUpdated)).Truncate(time.Second); remaining > 0 && !force {
-			lp.log.DEBUG.Printf("charger %s - contactor delay %v", status[enabled], remaining)
+			lp.log.DEBUG.Printf("charger %s - contactor delay %v", core.Status[enabled], remaining)
 			return nil
 		}
 
-		lp.log.DEBUG.Printf("charger %s", status[enabled])
+		lp.log.DEBUG.Printf("charger %s", core.Status[enabled])
 		if err = lp.charger.Enable(enabled); err == nil {
 			lp.enabled = enabled
 			lp.guardUpdated = lp.clock.Now()
 
 			lp.bus.Publish(evChargeCurrent, chargeCurrent)
-			lp.log.DEBUG.Printf("charger %s", status[enabled])
+			lp.log.DEBUG.Printf("charger %s", core.Status[enabled])
 
 			// wake up vehicle
 			if car, ok := lp.vehicle.(api.VehicleStartCharge); enabled && ok {
@@ -488,7 +526,7 @@ func (lp *LoadPoint) setLimit(chargeCurrent float64, force bool) (err error) {
 				}
 			}
 		} else {
-			lp.log.ERROR.Printf("charger %s: %v", status[enabled], err)
+			lp.log.ERROR.Printf("charger %s: %v", core.Status[enabled], err)
 		}
 	}
 
@@ -552,7 +590,7 @@ func (lp *LoadPoint) climateActive() bool {
 }
 
 // remoteControlled returns true if remote control status is active
-func (lp *LoadPoint) remoteControlled(demand RemoteDemand) bool {
+func (lp *LoadPoint) remoteControlled(demand core.RemoteDemand) bool {
 	lp.Lock()
 	defer lp.Unlock()
 
@@ -788,7 +826,7 @@ func (lp *LoadPoint) updateChargeMeter() {
 		lp.publish("chargePower", value)
 
 		return nil
-	}, retryOptions...)
+	}, core.RetryOptions...)
 
 	if err != nil {
 		err = fmt.Errorf("updating charge meter: %v", err)
@@ -923,7 +961,7 @@ func (lp *LoadPoint) Update(sitePower float64) {
 	var err error
 
 	// track if remote disabled is actually active
-	remoteDisabled := RemoteEnable
+	remoteDisabled := core.RemoteEnable
 
 	// execute loading strategy
 	switch {
@@ -943,8 +981,8 @@ func (lp *LoadPoint) Update(sitePower float64) {
 		lp.socTimer.Reset() // once SoC is reached, the target charge request is removed
 
 	// OCPP has priority over target charging
-	case lp.remoteControlled(RemoteHardDisable):
-		remoteDisabled = RemoteHardDisable
+	case lp.remoteControlled(core.RemoteHardDisable):
+		remoteDisabled = core.RemoteHardDisable
 		fallthrough
 
 	case mode == api.ModeOff:
@@ -973,8 +1011,8 @@ func (lp *LoadPoint) Update(sitePower float64) {
 		}
 
 		// Sunny Home Manager
-		if lp.remoteControlled(RemoteSoftDisable) {
-			remoteDisabled = RemoteSoftDisable
+		if lp.remoteControlled(core.RemoteSoftDisable) {
+			remoteDisabled = core.RemoteSoftDisable
 			targetCurrent = 0
 			required = true
 		}

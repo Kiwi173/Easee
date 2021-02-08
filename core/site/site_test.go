@@ -1,11 +1,11 @@
-package core
+package site
 
 import (
 	"testing"
 )
 
-func TestSiteApi(t *testing.T) {
-	var _ SiteAPI = NewSite()
+func TestApi(t *testing.T) {
+	var _ API = NewSite()
 }
 
 func TestSitePower(t *testing.T) {

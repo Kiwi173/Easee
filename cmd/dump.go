@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/andig/evcc/core"
+	"github.com/andig/evcc/core/loadpoint"
 	"github.com/andig/evcc/server"
 	"github.com/andig/evcc/util"
 	"github.com/spf13/cobra"
@@ -57,7 +57,7 @@ func runDump(cmd *cobra.Command, args []string) {
 	}
 
 	for id, lpI := range site.LoadPoints() {
-		lp := lpI.(*core.LoadPoint)
+		lp := lpI.(*loadpoint.LoadPoint)
 
 		d.Header(fmt.Sprintf("loadpoint %d", id+1), "=")
 		fmt.Println("")

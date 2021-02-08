@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/andig/evcc/core"
+	"github.com/andig/evcc/core/loadpoint"
 	"github.com/andig/evcc/util"
 	"github.com/denisbrodbeck/machineid"
 
@@ -26,7 +26,7 @@ type OCPP struct {
 
 // site is the minimal interface for accessing site methods
 type site interface {
-	LoadPoints() []core.LoadPointAPI
+	LoadPoints() []loadpoint.API
 }
 
 const retryTimeout = 5 * time.Second
