@@ -28,14 +28,14 @@ const (
 
 // Identity provides the identity.vwgroup.io login token source
 type Identity struct {
-	log *util.Logger
+	log util.Logger
 	*request.Helper
 	clientID string
 	oauth2.TokenSource
 }
 
 // NewIdentity creates VW identity
-func NewIdentity(log *util.Logger, clientID string) *Identity {
+func NewIdentity(log util.Logger, clientID string) *Identity {
 	v := &Identity{
 		log:      log,
 		Helper:   request.NewHelper(log),
@@ -62,6 +62,8 @@ func NewIdentity(log *util.Logger, clientID string) *Identity {
 func (v *Identity) Login(query url.Values, user, password string) error {
 	var vars FormVars
 	var req *http.Request
+
+	v.log.Redact(user, password)
 
 	// add nonce and state
 	query.Set("nonce", RandomString(43))

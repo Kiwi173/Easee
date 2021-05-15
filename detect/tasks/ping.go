@@ -30,7 +30,7 @@ type PingHandler struct {
 	Timeout time.Duration
 }
 
-func (h *PingHandler) Test(log *util.Logger, in ResultDetails) []ResultDetails {
+func (h *PingHandler) Test(log util.Logger, in ResultDetails) []ResultDetails {
 	pinger, err := ping.NewPinger(in.IP)
 	if err != nil {
 		panic(err)
@@ -44,16 +44,16 @@ func (h *PingHandler) Test(log *util.Logger, in ResultDetails) []ResultDetails {
 	pinger.Timeout = h.Timeout
 
 	if err = pinger.Run(); err != nil {
-		log.FATAL.Println("ping:", err)
+		log.Fatalln("ping:", err)
 
 		if runtime.GOOS != "windows" {
-			log.FATAL.Println("")
-			log.FATAL.Println("In order to run evcc in discovery mode, make sure to allow ping:")
-			log.FATAL.Println("")
-			log.FATAL.Println("	sudo sysctl -w net.ipv4.ping_group_range=\"0 2147483647\"")
+			log.Fatalln("")
+			log.Fatalln("In order to run evcc in discovery mode, make sure to allow ping:")
+			log.Fatalln("")
+			log.Fatalln("	sudo sysctl -w net.ipv4.ping_group_range=\"0 2147483647\"")
 		}
 
-		log.FATAL.Fatalln("")
+		log.Fatalln("")
 	}
 
 	stat := pinger.Statistics()

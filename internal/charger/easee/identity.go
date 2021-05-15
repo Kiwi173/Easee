@@ -39,7 +39,7 @@ type tokenSource struct {
 }
 
 // TokenSource creates an Easee token source
-func TokenSource(log *util.Logger, user, password string) (oauth2.TokenSource, error) {
+func TokenSource(log util.Logger, user, password string) (oauth2.TokenSource, error) {
 	c := &tokenSource{
 		Helper: request.NewHelper(log),
 	}

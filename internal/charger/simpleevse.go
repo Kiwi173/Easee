@@ -11,7 +11,7 @@ import (
 
 // SimpleEVSE charger implementation
 type SimpleEVSE struct {
-	log     *util.Logger
+	log     util.Logger
 	conn    *modbus.Connection
 	current int64
 }
@@ -50,7 +50,7 @@ func NewSimpleEVSE(uri, device, comset string, baudrate int, rtu bool, slaveID u
 		return nil, err
 	}
 
-	conn.Logger(log.TRACE)
+	conn.Logger(log.TraceLogger())
 	conn.Delay(200 * time.Millisecond)
 
 	evse := &SimpleEVSE{

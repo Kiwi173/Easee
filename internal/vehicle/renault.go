@@ -143,7 +143,7 @@ func NewRenaultFromConfig(other map[string]interface{}) (api.Vehicle, error) {
 	if err == nil && cc.VIN == "" {
 		v.vin, err = findVehicle(v.kamereonVehicles(v.accountID))
 		if err == nil {
-			log.DEBUG.Printf("found vehicle: %v", v.vin)
+			log.Debugf("found vehicle: %v", v.vin)
 		}
 	}
 

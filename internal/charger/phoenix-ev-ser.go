@@ -49,7 +49,7 @@ func NewPhoenixEVSer(uri, device, comset string, baudrate int, id uint8) (*Phoen
 	}
 
 	log := util.NewLogger("ev-ser")
-	conn.Logger(log.TRACE)
+	conn.Logger(log.TraceLogger())
 
 	wb := &PhoenixEVSer{
 		conn: conn,

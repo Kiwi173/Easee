@@ -18,7 +18,7 @@ import (
 
 // OCPP is an OCPP client
 type OCPP struct {
-	log   *util.Logger
+	log   util.Logger
 	cache *util.Cache
 	site  core.SiteAPI
 	cp    ocpp16.ChargePoint
@@ -46,7 +46,7 @@ func New(conf map[string]interface{}, site core.SiteAPI, cache *util.Cache) (*OC
 		} else {
 			cc.StationID = fmt.Sprintf("evcc-%d", rand.Int31())
 		}
-		log.DEBUG.Println("station id:", cc.StationID)
+		log.Debugln("station id:", cc.StationID)
 	}
 
 	ws := ws.NewClient()
@@ -74,7 +74,7 @@ func New(conf map[string]interface{}, site core.SiteAPI, cache *util.Cache) (*OC
 // errorHandler logs error channel
 func (s *OCPP) errorHandler(errC <-chan error) {
 	for err := range errC {
-		s.log.ERROR.Println(err)
+		s.log.Errorln(err)
 	}
 }
 
@@ -91,9 +91,9 @@ func (s *OCPP) Run() {
 				}
 			}
 
-			s.log.TRACE.Printf("send: lp-%d status: %+v", connector, status)
+			s.log.Tracef("send: lp-%d status: %+v", connector, status)
 			if _, err := s.cp.StatusNotification(connector, ocppcore.NoError, status); err != nil {
-				s.log.ERROR.Printf("lp-%d: %v", connector, err)
+				s.log.Errorf("lp-%d: %v", connector, err)
 			}
 		}
 

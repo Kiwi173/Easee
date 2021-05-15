@@ -17,7 +17,7 @@ import (
 
 // TPLink charger implementation
 type TPLink struct {
-	log          *util.Logger
+	log          util.Logger
 	uri          string
 	standbypower float64
 }
@@ -196,7 +196,7 @@ func (c *TPLink) execCmd(cmd string, res interface{}) error {
 		key = resp[i]
 		_ = buf.WriteByte(dec)
 	}
-	c.log.TRACE.Printf("recv: %s", buf.String())
+	c.log.Tracef("recv: %s", buf.String())
 
 	return json.Unmarshal(buf.Bytes(), res)
 }

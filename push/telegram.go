@@ -20,8 +20,8 @@ type telegramConfig struct {
 }
 
 func init() {
-	if err := tgbotapi.SetLogger(log.ERROR); err != nil {
-		log.ERROR.Printf("telegram: %v", err)
+	if err := tgbotapi.SetLogger(log.ErrorLogger()); err != nil {
+		log.Errorf("telegram: %v", err)
 	}
 }
 
@@ -53,13 +53,13 @@ func (m *Telegram) trackChats() {
 
 	updates, err := m.bot.GetUpdatesChan(conf)
 	if err != nil {
-		log.ERROR.Printf("telegram: %v", err)
+		log.Errorf("telegram: %v", err)
 	}
 
 	for update := range updates {
 		m.Lock()
 		if _, ok := m.chats[update.Message.Chat.ID]; !ok {
-			log.INFO.Printf("telegram: new chat id: %d", update.Message.Chat.ID)
+			log.Infof("telegram: new chat id: %d", update.Message.Chat.ID)
 			// m.chats[update.Message.Chat.ID] = struct{}{}
 		}
 		m.Unlock()
@@ -70,11 +70,11 @@ func (m *Telegram) trackChats() {
 func (m *Telegram) Send(title, msg string) {
 	m.Lock()
 	for chat := range m.chats {
-		log.TRACE.Printf("telegram: sending to %d", chat)
+		log.Tracef("telegram: sending to %d", chat)
 
 		msg := tgbotapi.NewMessage(chat, msg)
 		if _, err := m.bot.Send(msg); err != nil {
-			log.ERROR.Print(err)
+			log.Errorln(err)
 		}
 	}
 	m.Unlock()

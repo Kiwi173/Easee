@@ -10,7 +10,7 @@ import (
 
 // Javascript implements Javascript request provider
 type Javascript struct {
-	log    *util.Logger
+	log    util.Logger
 	vm     *otto.Otto
 	script string
 }

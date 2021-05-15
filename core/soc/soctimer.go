@@ -22,7 +22,7 @@ type Adapter interface {
 // Timer is the target charging handler
 type Timer struct {
 	Adapter
-	log            *util.Logger
+	log            util.Logger
 	maxCurrent     int64
 	current        float64
 	SoC            int
@@ -32,7 +32,7 @@ type Timer struct {
 }
 
 // NewTimer creates a Timer
-func NewTimer(log *util.Logger, adapter Adapter, maxCurrent int64) *Timer {
+func NewTimer(log util.Logger, adapter Adapter, maxCurrent int64) *Timer {
 	lp := &Timer{
 		log:        log,
 		Adapter:    adapter,
@@ -69,7 +69,7 @@ func (lp *Timer) StartRequired() bool {
 	// time
 	remainingDuration := se.RemainingChargeDuration(power, lp.SoC)
 	lp.finishAt = time.Now().Add(remainingDuration).Round(time.Minute)
-	lp.log.DEBUG.Printf("target charging active for %v: projected %v (%v remaining)", lp.Time, lp.finishAt, remainingDuration.Round(time.Minute))
+	lp.log.Debugf("target charging active for %v: projected %v (%v remaining)", lp.Time, lp.finishAt, remainingDuration.Round(time.Minute))
 
 	lp.chargeRequired = lp.finishAt.After(lp.Time)
 	lp.Publish("timerActive", lp.chargeRequired)
@@ -96,11 +96,11 @@ func (lp *Timer) Handle() float64 {
 	switch {
 	case lp.finishAt.Before(lp.Time.Add(-deviation)):
 		lp.current--
-		lp.log.DEBUG.Printf("target charging: slowdown")
+		lp.log.Debugf("target charging: slowdown")
 
 	case lp.finishAt.After(lp.Time):
 		lp.current++
-		lp.log.DEBUG.Printf("target charging: speedup")
+		lp.log.Debugf("target charging: speedup")
 	}
 
 	lp.current = math.Max(math.Min(lp.current, float64(lp.maxCurrent)), 0)

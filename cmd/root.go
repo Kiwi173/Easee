@@ -139,29 +139,29 @@ func Execute() {
 
 func run(cmd *cobra.Command, args []string) {
 	util.LogLevel(viper.GetString("log"), viper.GetStringMapString("levels"))
-	log.INFO.Printf("evcc %s (%s)", server.Version, server.Commit)
+	log.Infof("evcc %s (%s)", server.Version, server.Commit)
 
 	// load config and re-configure logging after reading config file
 	conf, err := loadConfigFile(cfgFile)
 	if err != nil {
-		log.ERROR.Println("missing evcc config - switching into demo mode")
+		log.Errorln("missing evcc config - switching into demo mode")
 		conf = demoConfig()
 	}
 
 	util.LogLevel(viper.GetString("log"), viper.GetStringMapString("levels"))
 
 	uri := viper.GetString("uri")
-	log.INFO.Println("listening at", uri)
+	log.Infoln("listening at", uri)
 
 	// setup environment
 	if err := configureEnvironment(conf); err != nil {
-		log.FATAL.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	// setup loadpoints
 	site, err := configureSiteAndLoadpoints(conf)
 	if err != nil {
-		log.FATAL.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	// start broadcasting values
@@ -250,5 +250,5 @@ func run(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}()
 
-	log.FATAL.Println(httpd.ListenAndServe())
+	log.Fatalln(httpd.ListenAndServe())
 }

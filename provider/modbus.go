@@ -16,7 +16,7 @@ import (
 
 // Modbus implements modbus RTU and TCP access
 type Modbus struct {
-	log    *util.Logger
+	log    util.Logger
 	conn   *modbus.Connection
 	device meters.Device
 	op     modbus.Operation
@@ -55,7 +55,7 @@ func NewModbusFromConfig(other map[string]interface{}) (IntProvider, error) {
 	}
 
 	log := util.NewLogger("modbus")
-	conn.Logger(log.TRACE)
+	conn.Logger(log.TraceLogger())
 
 	var device meters.Device
 	var op modbus.Operation
@@ -65,7 +65,7 @@ func NewModbusFromConfig(other map[string]interface{}) (IntProvider, error) {
 	}
 
 	if cc.Value == "" && cc.Register.Decode == "" {
-		log.WARN.Println("missing modbus value or register - assuming Power")
+		log.Warnln("missing modbus value or register - assuming Power")
 		cc.Value = "Power"
 	}
 
@@ -169,9 +169,9 @@ func (m *Modbus) floatGetter() (float64, error) {
 
 	if err == nil {
 		if m.op.MBMD.IEC61850 != 0 {
-			m.log.TRACE.Printf("%s: %v", m.op.MBMD.IEC61850, res.Value)
+			m.log.Tracef("%s: %v", m.op.MBMD.IEC61850, res.Value)
 		} else {
-			m.log.TRACE.Printf("%d:%d:%s: %v", m.op.SunSpec.Model, m.op.SunSpec.Block, m.op.SunSpec.Point, res.Value)
+			m.log.Tracef("%d:%d:%s: %v", m.op.SunSpec.Model, m.op.SunSpec.Block, m.op.SunSpec.Point, res.Value)
 		}
 	}
 

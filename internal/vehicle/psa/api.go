@@ -26,7 +26,7 @@ type API struct {
 }
 
 // NewAPI creates a new vehicle
-func NewAPI(log *util.Logger, brand, realm, id, secret string) *API {
+func NewAPI(log util.Logger, brand, realm, id, secret string) *API {
 	v := &API{
 		Helper: request.NewHelper(log),
 		brand:  brand,

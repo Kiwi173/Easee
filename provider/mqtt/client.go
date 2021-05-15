@@ -34,7 +34,7 @@ type Config struct {
 
 // Client encapsulates mqtt publish/subscribe functions
 type Client struct {
-	log      *util.Logger
+	log      util.Logger
 	mux      sync.Mutex
 	Client   mqtt.Client
 	broker   string
@@ -43,9 +43,9 @@ type Client struct {
 }
 
 // NewClient creates new Mqtt publisher
-func NewClient(log *util.Logger, broker, user, password, clientID string, qos byte) (*Client, error) {
+func NewClient(log util.Logger, broker, user, password, clientID string, qos byte) (*Client, error) {
 	broker = util.DefaultPort(broker, 1883)
-	log.INFO.Printf("connecting %s at %s", clientID, broker)
+	log.Infof("connecting %s at %s", clientID, broker)
 
 	mc := &Client{
 		log:      log,
@@ -77,25 +77,25 @@ func NewClient(log *util.Logger, broker, user, password, clientID string, qos by
 
 // ConnectionLostHandler logs cause of connection loss as warning
 func (m *Client) ConnectionLostHandler(client mqtt.Client, reason error) {
-	m.log.ERROR.Printf("%s connection lost: %v", m.broker, reason.Error())
+	m.log.Errorf("%s connection lost: %v", m.broker, reason.Error())
 }
 
 // ConnectionHandler restores listeners
 func (m *Client) ConnectionHandler(client mqtt.Client) {
-	m.log.DEBUG.Printf("%s connected", m.broker)
+	m.log.Debugf("%s connected", m.broker)
 
 	m.mux.Lock()
 	defer m.mux.Unlock()
 
 	for topic := range m.listener {
-		m.log.TRACE.Printf("%s subscribe %s", m.broker, topic)
+		m.log.Tracef("%s subscribe %s", m.broker, topic)
 		go m.listen(topic)
 	}
 }
 
 // Publish synchronously publishes payload using client qos
 func (m *Client) Publish(topic string, retained bool, payload interface{}) error {
-	m.log.TRACE.Printf("send %s: '%v'", topic, payload)
+	m.log.Tracef("send %s: '%v'", topic, payload)
 	token := m.Client.Publish(topic, m.Qos, retained, payload)
 	if token.WaitTimeout(publishTimeout) {
 		return token.Error()
@@ -116,7 +116,7 @@ func (m *Client) Listen(topic string, callback func(string)) {
 func (m *Client) listen(topic string) {
 	token := m.Client.Subscribe(topic, m.Qos, func(c mqtt.Client, msg mqtt.Message) {
 		payload := string(msg.Payload())
-		m.log.TRACE.Printf("recv %s: '%v'", topic, payload)
+		m.log.Tracef("recv %s: '%v'", topic, payload)
 		if len(payload) > 0 {
 			m.mux.Lock()
 			callbacks := m.listener[topic]
@@ -134,9 +134,9 @@ func (m *Client) listen(topic string) {
 func (m *Client) WaitForToken(token mqtt.Token) {
 	if token.WaitTimeout(publishTimeout) {
 		if token.Error() != nil {
-			m.log.ERROR.Printf("error: %s", token.Error())
+			m.log.Errorf("error: %s", token.Error())
 		}
 	} else {
-		m.log.DEBUG.Println("timeout")
+		m.log.Debugln("timeout")
 	}
 }

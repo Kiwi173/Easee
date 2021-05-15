@@ -98,13 +98,13 @@ type Telegram struct {
 // Listener for receiving SMA multicast data packages
 type Listener struct {
 	mux     sync.Mutex
-	log     *util.Logger
+	log     util.Logger
 	conn    *net.UDPConn
 	clients map[string]chan<- Telegram
 }
 
 // New creates a Listener
-func New(log *util.Logger) (*Listener, error) {
+func New(log util.Logger) (*Listener, error) {
 	// Parse the string address
 	gaddr, err := net.ResolveUDPAddr("udp4", multicastAddr)
 	if err != nil {
@@ -169,7 +169,7 @@ func (l *Listener) processMessage(src *net.UDPAddr, b []byte) (Telegram, error) 
 		Values: obisValues,
 	}
 
-	//	l.log.TRACE.Printf("recv %v", msg.Values)
+	//	l.log.Tracef("recv %v", msg.Values)
 
 	return msg, nil
 }
@@ -181,7 +181,7 @@ func (l *Listener) listen() {
 	for {
 		read, src, err := l.conn.ReadFromUDP(buffer)
 		if err != nil {
-			l.log.WARN.Printf("udp read failed: %s", err)
+			l.log.Warnf("udp read failed: %s", err)
 			continue
 		}
 
@@ -208,7 +208,7 @@ func (l *Listener) send(msg Telegram) {
 			select {
 			case client <- msg:
 			default:
-				l.log.TRACE.Println("recv: listener blocked")
+				l.log.Traceln("recv: listener blocked")
 			}
 			break
 		}

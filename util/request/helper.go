@@ -17,7 +17,7 @@ type Helper struct {
 }
 
 // NewHelper creates http helper for simplified PUT GET logic
-func NewHelper(log *util.Logger) *Helper {
+func NewHelper(log util.Logger) *Helper {
 	r := &Helper{
 		Client: &http.Client{
 			Timeout:   Timeout,

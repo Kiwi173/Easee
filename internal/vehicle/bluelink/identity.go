@@ -39,14 +39,14 @@ type Config struct {
 // Based on https://github.com/Hacksore/bluelinky.
 type Identity struct {
 	*request.Helper
-	log      *util.Logger
+	log      util.Logger
 	config   Config
 	deviceID string
 	oauth2.TokenSource
 }
 
 // NewIdentity creates a new BlueLink API
-func NewIdentity(log *util.Logger, config Config) (*Identity, error) {
+func NewIdentity(log util.Logger, config Config) (*Identity, error) {
 	v := &Identity{
 		log:    log,
 		Helper: request.NewHelper(log),

@@ -26,7 +26,7 @@ type API struct {
 	refreshTime time.Time
 }
 
-func NewAPI(log *util.Logger, identity oauth2.TokenSource, vin string) *API {
+func NewAPI(log util.Logger, identity oauth2.TokenSource, vin string) *API {
 	v := &API{
 		Helper: request.NewHelper(log),
 		VIN:    vin,

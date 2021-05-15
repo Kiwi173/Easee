@@ -35,7 +35,7 @@ type MqttHandler struct {
 	Timeout time.Duration
 }
 
-func (h *MqttHandler) Test(log *util.Logger, in ResultDetails) []ResultDetails {
+func (h *MqttHandler) Test(log util.Logger, in ResultDetails) []ResultDetails {
 	broker := fmt.Sprintf("%s:%d", in.IP, h.Port)
 
 	opt := mqtt.NewClientOptions()

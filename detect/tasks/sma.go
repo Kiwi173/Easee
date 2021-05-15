@@ -57,7 +57,7 @@ func (h *SMAHandler) httpAvailable(ip string) bool {
 	return true
 }
 
-func (h *SMAHandler) Test(log *util.Logger, in ResultDetails) (res []ResultDetails) {
+func (h *SMAHandler) Test(log util.Logger, in ResultDetails) (res []ResultDetails) {
 	h.mux.Lock()
 
 	if h.listener != nil {
@@ -67,7 +67,7 @@ func (h *SMAHandler) Test(log *util.Logger, in ResultDetails) (res []ResultDetai
 
 	var err error
 	if h.listener, err = sma.New(log); err != nil {
-		log.ERROR.Println("shm:", err)
+		log.Errorln("shm:", err)
 		return nil
 	}
 	h.mux.Unlock()

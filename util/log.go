@@ -1,8 +1,10 @@
 package util
 
 import (
+	"bytes"
 	"io"
 	"log"
+	"net/url"
 	"os"
 	"regexp"
 	"strconv"
@@ -12,8 +14,30 @@ import (
 	jww "github.com/spf13/jwalterweatherman"
 )
 
+// Logger wraps a jww notepad to avoid leaking implementation detail
+type Logger interface {
+	ErrorLogger() *log.Logger
+	TraceLogger() *log.Logger
+
+	Name() string
+	Redact(...string)
+
+	Traceln(v ...interface{})
+	Tracef(format string, v ...interface{})
+	Debugln(v ...interface{})
+	Debugf(format string, v ...interface{})
+	Infoln(v ...interface{})
+	Infof(format string, v ...interface{})
+	Warnln(v ...interface{})
+	Warnf(format string, v ...interface{})
+	Errorln(v ...interface{})
+	Errorf(format string, v ...interface{})
+	Fatalln(v ...interface{})
+	Fatalf(format string, v ...interface{})
+}
+
 var (
-	loggers = map[string]*Logger{}
+	loggers = map[string]*logger{}
 	levels  = map[string]jww.Threshold{}
 
 	loggersMux sync.Mutex
@@ -28,14 +52,31 @@ var (
 // LogAreaPadding of log areas
 var LogAreaPadding = 6
 
+var _ Logger = (*logger)(nil)
+
 // Logger wraps a jww notepad to avoid leaking implementation detail
-type Logger struct {
+type logger struct {
 	*jww.Notepad
 	name string
 }
 
+type redactor struct {
+	r [][]byte
+	w io.Writer
+}
+
+var _ io.Writer = (*redactor)(nil)
+
+func (r *redactor) Write(p []byte) (int, error) {
+	b := p
+	for _, r := range r.r {
+		b = bytes.ReplaceAll(b, r, []byte("***"))
+	}
+	return r.w.Write(b)
+}
+
 // NewLogger creates a logger with the given log area and adds it to the registry
-func NewLogger(area string) *Logger {
+func NewLogger(area string) Logger {
 	padded := area
 	for len(padded) < LogAreaPadding {
 		padded = padded + " "
@@ -47,7 +88,7 @@ func NewLogger(area string) *Logger {
 	loggersMux.Lock()
 	defer loggersMux.Unlock()
 
-	logger := &Logger{
+	logger := &logger{
 		Notepad: notepad,
 		name:    area,
 	}
@@ -55,13 +96,66 @@ func NewLogger(area string) *Logger {
 	return logger
 }
 
+func (l *logger) ErrorLogger() *log.Logger {
+	return l.ERROR
+}
+func (l *logger) TraceLogger() *log.Logger {
+	return l.TRACE
+}
+
+func (l *logger) Traceln(v ...interface{}) {
+	l.TRACE.Println(v...)
+}
+func (l *logger) Tracef(format string, v ...interface{}) {
+	l.TRACE.Printf(format, v...)
+}
+func (l *logger) Debugln(v ...interface{}) {
+	l.DEBUG.Println(v...)
+}
+func (l *logger) Debugf(format string, v ...interface{}) {
+	l.DEBUG.Printf(format, v...)
+}
+func (l *logger) Infoln(v ...interface{}) {
+	l.INFO.Println(v...)
+}
+func (l *logger) Infof(format string, v ...interface{}) {
+	l.INFO.Printf(format, v...)
+}
+func (l *logger) Warnln(v ...interface{}) {
+	l.WARN.Println(v...)
+}
+func (l *logger) Warnf(format string, v ...interface{}) {
+	l.WARN.Printf(format, v...)
+}
+func (l *logger) Errorln(v ...interface{}) {
+	l.ERROR.Println(v...)
+}
+func (l *logger) Errorf(format string, v ...interface{}) {
+	l.ERROR.Printf(format, v...)
+}
+func (l *logger) Fatalln(v ...interface{}) {
+	l.FATAL.Println(v...)
+}
+func (l *logger) Fatalf(format string, v ...interface{}) {
+	l.FATAL.Printf(format, v...)
+}
+
+// Redact returns the loggers name
+func (l *logger) Redact(r ...string) {
+	red := &redactor{w: l.TRACE.Writer()}
+	for _, r := range r {
+		red.r = append(red.r, []byte(r), []byte(url.QueryEscape(r)))
+	}
+	l.TRACE.SetOutput(red)
+}
+
 // Name returns the loggers name
-func (l *Logger) Name() string {
+func (l *logger) Name() string {
 	return l.name
 }
 
 // Loggers invokes callback for each configured logger
-func Loggers(cb func(string, *Logger)) {
+func Loggers(cb func(string, *logger)) {
 	for name, logger := range loggers {
 		cb(name, logger)
 	}
@@ -88,7 +182,7 @@ func LogLevel(defaultLevel string, areaLevels map[string]string) {
 		levels[area] = LogLevelToThreshold(level)
 	}
 
-	Loggers(func(name string, logger *Logger) {
+	Loggers(func(name string, logger *logger) {
 		logger.SetStdoutThreshold(LogLevelForArea(name))
 	})
 }

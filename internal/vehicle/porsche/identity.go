@@ -34,13 +34,13 @@ type AccessTokens struct {
 
 // Identity is the Porsche Identity client
 type Identity struct {
-	log *util.Logger
+	log util.Logger
 	*request.Helper
 	user, password string
 }
 
 // NewIdentity creates a new Identity client
-func NewIdentity(log *util.Logger, user, password string) *Identity {
+func NewIdentity(log util.Logger, user, password string) *Identity {
 	v := &Identity{
 		log:      log,
 		Helper:   request.NewHelper(log),
@@ -227,7 +227,7 @@ func (v *Identity) FindVehicle(accessTokens AccessTokens, vin string) (Vehicle, 
 		}
 
 		if foundVehicle.VIN != "" {
-			v.log.DEBUG.Printf("found vehicle: %v", foundVehicle.VIN)
+			v.log.Debugf("found vehicle: %v", foundVehicle.VIN)
 
 			// check if the found vehicle is a Taycan, because that one supports the emobility API
 			if accessTokens.EmobilityToken.AccessToken != "" {

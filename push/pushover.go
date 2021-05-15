@@ -38,11 +38,11 @@ func (m *PushOver) Send(title, msg string) {
 
 	for _, id := range m.recipients {
 		go func(id string) {
-			log.TRACE.Printf("pushover: sending to %s", id)
+			log.Tracef("pushover: sending to %s", id)
 
 			recipient := pushover.NewRecipient(id)
 			if _, err := m.app.SendMessage(message, recipient); err != nil {
-				log.ERROR.Print(err)
+				log.Errorln(err)
 			}
 		}(id)
 	}

@@ -32,14 +32,14 @@ var ErrAuthFail = errors.New("authorization failed")
 // Based on https://github.com/Hacksore/bluelinky.
 type API struct {
 	*request.Helper
-	log         *util.Logger
+	log         util.Logger
 	identity    *Identity
 	refresh     bool
 	refreshTime time.Time
 }
 
 // New creates a new BlueLink API
-func NewAPI(log *util.Logger, identity *Identity, cache time.Duration) *API {
+func NewAPI(log util.Logger, identity *Identity, cache time.Duration) *API {
 	v := &API{
 		log:      log,
 		identity: identity,
@@ -170,7 +170,7 @@ func (v *API) refreshRequest(vid string) error {
 		go func() {
 			var resp StatusResponse
 			if err := v.DoJSON(req, &resp); err == nil && resp.RetCode != resOK {
-				v.log.ERROR.Printf("unexpected response: %s", resp.RetCode)
+				v.log.Errorf("unexpected response: %s", resp.RetCode)
 			}
 		}()
 	}

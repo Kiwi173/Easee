@@ -61,7 +61,7 @@ func NewNissanFromConfig(other map[string]interface{}) (api.Vehicle, error) {
 	if err == nil && cc.VIN == "" {
 		api.VIN, err = findVehicle(api.Vehicles())
 		if err == nil {
-			log.DEBUG.Printf("found vehicle: %v", api.VIN)
+			log.Debugf("found vehicle: %v", api.VIN)
 		}
 	}
 

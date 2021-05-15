@@ -13,7 +13,7 @@ type tokenRefresher struct {
 	*request.Helper
 }
 
-func Refresher(log *util.Logger) oauth.TokenRefresher {
+func Refresher(log util.Logger) oauth.TokenRefresher {
 	return &tokenRefresher{
 		Helper: request.NewHelper(log),
 	}

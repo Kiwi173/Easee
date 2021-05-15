@@ -50,7 +50,7 @@ type EmobilityResponse struct {
 
 // EMobilityProvider is an api.Vehicle implementation for Porsche Taycan cars
 type EMobilityProvider struct {
-	log *util.Logger
+	log util.Logger
 	*request.Helper
 	token    oauth2.Token
 	identity *Identity
@@ -58,7 +58,7 @@ type EMobilityProvider struct {
 }
 
 // NewEMobilityProvider creates a new vehicle
-func NewEMobilityProvider(log *util.Logger, identity *Identity, token oauth2.Token, vin string, cache time.Duration) *EMobilityProvider {
+func NewEMobilityProvider(log util.Logger, identity *Identity, token oauth2.Token, vin string, cache time.Duration) *EMobilityProvider {
 	impl := &EMobilityProvider{
 		log:      log,
 		token:    token,

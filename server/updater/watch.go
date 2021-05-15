@@ -15,7 +15,7 @@ type webServer interface {
 }
 
 type watch struct {
-	log     *util.Logger
+	log     util.Logger
 	outChan chan<- util.Param
 	repo    *Repo
 }
@@ -31,12 +31,12 @@ func (u *watch) watchReleases(installed string, out chan *github.RepositoryRelea
 	for range time.NewTicker(6 * time.Hour).C {
 		rel, err := u.findReleaseUpdate(installed)
 		if err != nil {
-			u.log.ERROR.Printf("version check failed: %v", err)
+			u.log.Errorf("version check failed: %v", err)
 			continue
 		}
 
 		if rel != nil {
-			u.log.INFO.Printf("new version available: %s", *rel.TagName)
+			u.log.Infof("new version available: %s", *rel.TagName)
 			out <- rel
 		}
 	}
@@ -80,6 +80,6 @@ func (u *watch) fetchReleaseNotes(installed string) {
 			Val: notes,
 		}
 	} else {
-		u.log.WARN.Printf("couldn't download release notes: %v", err)
+		u.log.Warnf("couldn't download release notes: %v", err)
 	}
 }

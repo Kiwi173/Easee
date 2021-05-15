@@ -21,21 +21,21 @@ func init() {
 
 func runMeter(cmd *cobra.Command, args []string) {
 	util.LogLevel(viper.GetString("log"), viper.GetStringMapString("levels"))
-	log.INFO.Printf("evcc %s (%s)", server.Version, server.Commit)
+	log.Infof("evcc %s (%s)", server.Version, server.Commit)
 
 	// load config
 	conf, err := loadConfigFile(cfgFile)
 	if err != nil {
-		log.FATAL.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	// setup environment
 	if err := configureEnvironment(conf); err != nil {
-		log.FATAL.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	if err := cp.configureMeters(conf); err != nil {
-		log.FATAL.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	meters := cp.meters

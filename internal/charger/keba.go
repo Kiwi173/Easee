@@ -25,7 +25,7 @@ type RFID struct {
 
 // Keba is an api.Charger implementation with configurable getters and setters.
 type Keba struct {
-	log     *util.Logger
+	log     util.Logger
 	conn    string
 	rfid    RFID
 	timeout time.Duration
@@ -166,7 +166,7 @@ func (c *Keba) Status() (api.ChargeStatus, error) {
 	}
 
 	if kr.AuthON == 1 && c.rfid.Tag == "" {
-		c.log.WARN.Println("missing credentials for RFID authorization")
+		c.log.Warnln("missing credentials for RFID authorization")
 	}
 
 	if kr.Plug < 5 {

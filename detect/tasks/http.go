@@ -65,7 +65,7 @@ type HttpHandler struct {
 	Timeout              time.Duration
 }
 
-func (h *HttpHandler) Test(log *util.Logger, in ResultDetails) []ResultDetails {
+func (h *HttpHandler) Test(log util.Logger, in ResultDetails) []ResultDetails {
 	port := in.Port
 	if port == 0 {
 		port = h.Port

@@ -19,7 +19,7 @@ type Identity struct {
 	oauth2.TokenSource
 }
 
-func NewIdentity(log *util.Logger) *Identity {
+func NewIdentity(log util.Logger) *Identity {
 	return &Identity{
 		Helper: request.NewHelper(log),
 	}

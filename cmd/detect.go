@@ -36,7 +36,7 @@ func init() {
 func IPsFromSubnet(arg string) (res []string) {
 	gen, err := ipnetgen.New(arg)
 	if err != nil {
-		log.FATAL.Fatal("could not create iterator")
+		log.Fatalln("could not create iterator")
 	}
 
 	for ip := gen.Next(); ip != nil; ip = gen.Next() {
@@ -61,7 +61,7 @@ func ParseHostIPNet(arg string) (res []string) {
 
 	// check subnet size
 	if bits, _ := ipnet.Mask.Size(); bits < 24 {
-		log.INFO.Println("skipping large subnet:", ipnet)
+		log.Infoln("skipping large subnet:", ipnet)
 		return
 	}
 
@@ -124,11 +124,11 @@ configuring EVCC but are probably not sufficient for fully automatic configurati
 	if len(hosts) == 0 {
 		ips := util.LocalIPs()
 		if len(ips) == 0 {
-			log.FATAL.Fatal("could not find ip")
+			log.Fatalln("could not find ip")
 		}
 
 		myIP := ips[0]
-		log.INFO.Println("my ip:", myIP.IP)
+		log.Infoln("my ip:", myIP.IP)
 
 		hosts = append(hosts, "127.0.0.1")
 		hosts = append(hosts, IPsFromSubnet(myIP.String())...)

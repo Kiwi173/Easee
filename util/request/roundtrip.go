@@ -10,14 +10,14 @@ import (
 )
 
 type roundTripper struct {
-	log       *util.Logger
+	log       util.Logger
 	transport http.RoundTripper
 }
 
 const max = 2048
 
 // NewTripper creates a logging roundtrip handler
-func NewTripper(log *util.Logger, transport http.RoundTripper) http.RoundTripper {
+func NewTripper(log util.Logger, transport http.RoundTripper) http.RoundTripper {
 	tripper := &roundTripper{
 		log:       log,
 		transport: transport,
@@ -53,7 +53,7 @@ func (r *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 
 	if bld.Len() > 0 {
-		r.log.TRACE.Println(bld.String())
+		r.log.Traceln(bld.String())
 	}
 
 	return resp, err

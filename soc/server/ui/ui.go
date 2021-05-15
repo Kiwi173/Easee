@@ -240,14 +240,14 @@ func Run() {
 		}
 
 		go func() {
-			log.Fatal(http.ListenAndServe(":http", certManager.HTTPHandler(nil)))
+			log.Fatalln(http.ListenAndServe(":http", certManager.HTTPHandler(nil)))
 		}()
 
 		s.Addr = ":https"
 		s.TLSConfig = certManager.TLSConfig()
 
-		log.Fatal(s.ListenAndServeTLS("", ""))
+		log.Fatalln(s.ListenAndServeTLS("", ""))
 	} else {
-		log.Fatal(s.ListenAndServe())
+		log.Fatalln(s.ListenAndServe())
 	}
 }

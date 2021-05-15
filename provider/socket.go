@@ -19,7 +19,7 @@ const retryDelay = 5 * time.Second
 // Socket implements websocket request provider
 type Socket struct {
 	*request.Helper
-	log     *util.Logger
+	log     util.Logger
 	mux     *util.Waiter
 	url     string
 	headers map[string]string
@@ -55,13 +55,13 @@ func NewSocketProviderFromConfig(other map[string]interface{}) (IntProvider, err
 
 	url := util.DefaultScheme(cc.URI, "ws")
 	if url != cc.URI {
-		log.WARN.Printf("missing scheme for %s, assuming ws", cc.URI)
+		log.Warnf("missing scheme for %s, assuming ws", cc.URI)
 	}
 
 	p := &Socket{
 		log:     log,
 		Helper:  request.NewHelper(log),
-		mux:     util.NewWaiter(cc.Timeout, func() { log.TRACE.Println("wait for initial value") }),
+		mux:     util.NewWaiter(cc.Timeout, func() { log.Traceln("wait for initial value") }),
 		url:     url,
 		headers: cc.Headers,
 		scale:   cc.Scale,
@@ -102,7 +102,7 @@ func (p *Socket) listen() {
 	for {
 		client, _, err := websocket.DefaultDialer.Dial(p.url, headers)
 		if err != nil {
-			p.log.ERROR.Println(err)
+			p.log.Errorln(err)
 			time.Sleep(retryDelay)
 			continue
 		}
@@ -110,12 +110,12 @@ func (p *Socket) listen() {
 		for {
 			_, b, err := client.ReadMessage()
 			if err != nil {
-				p.log.TRACE.Println("read:", err)
+				p.log.Traceln("read:", err)
 				_ = client.Close()
 				break
 			}
 
-			p.log.TRACE.Printf("recv: %s", b)
+			p.log.Tracef("recv: %s", b)
 
 			p.mux.Lock()
 			if p.jq != nil {

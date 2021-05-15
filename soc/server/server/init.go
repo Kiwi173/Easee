@@ -70,5 +70,5 @@ func Run() {
 	})
 	pb.RegisterAuthServer(grpcServer, &AuthServer{})
 
-	log.Fatal(grpcServer.Serve(listener))
+	log.Fatalln(grpcServer.Serve(listener))
 }

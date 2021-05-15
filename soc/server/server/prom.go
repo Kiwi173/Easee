@@ -17,7 +17,7 @@ func registerMetrics() {
 	}, []string{"token", "brand"})
 
 	if err := prometheus.Register(promActiveVehicles); err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 }
 

@@ -14,7 +14,7 @@ const chargeEfficiency = 0.9 // assume charge 90% efficiency
 // Estimator provides vehicle soc and charge duration
 // Vehicle SoC can be estimated to provide more granularity
 type Estimator struct {
-	log      *util.Logger
+	log      util.Logger
 	vehicle  api.Vehicle
 	estimate bool
 
@@ -27,7 +27,7 @@ type Estimator struct {
 }
 
 // NewEstimator creates new estimator
-func NewEstimator(log *util.Logger, vehicle api.Vehicle, estimate bool) *Estimator {
+func NewEstimator(log util.Logger, vehicle api.Vehicle, estimate bool) *Estimator {
 	s := &Estimator{
 		log:      log,
 		vehicle:  vehicle,
@@ -65,7 +65,7 @@ func (s *Estimator) RemainingChargeDuration(chargePower float64, targetSoC int) 
 			}
 
 			if !errors.Is(err, api.ErrNotAvailable) {
-				s.log.WARN.Printf("updating remaining time failed: %v", err)
+				s.log.Warnf("updating remaining time failed: %v", err)
 			}
 		}
 
@@ -97,7 +97,7 @@ func (s *Estimator) SoC(chargedEnergy float64) (float64, error) {
 			return 0, err
 		}
 
-		s.log.WARN.Printf("updating soc failed: %v", err)
+		s.log.Warnf("updating soc failed: %v", err)
 
 		// try to recover from temporary vehicle-api errors
 		if s.prevSoC == 0 { // never received a soc value
@@ -119,7 +119,7 @@ func (s *Estimator) SoC(chargedEnergy float64) (float64, error) {
 			if socDelta > 2 && energyDelta > 0 && s.prevSoC > 0 {
 				s.energyPerSocStep = energyDelta / socDelta
 				s.virtualCapacity = s.energyPerSocStep * 100
-				s.log.TRACE.Printf("soc gradient updated: energyPerSocStep: %0.0fWh, virtualCapacity: %0.0fWh", s.energyPerSocStep, s.virtualCapacity)
+				s.log.Tracef("soc gradient updated: energyPerSocStep: %0.0fWh, virtualCapacity: %0.0fWh", s.energyPerSocStep, s.virtualCapacity)
 			}
 
 			// sample charged energy at soc change, reset energy delta
@@ -127,7 +127,7 @@ func (s *Estimator) SoC(chargedEnergy float64) (float64, error) {
 			s.prevSoC = s.socCharge
 		} else {
 			s.socCharge = math.Min(f+energyDelta/s.energyPerSocStep, 100)
-			s.log.TRACE.Printf("soc estimated: %.2f%% (vehicle: %.2f%%)", s.socCharge, f)
+			s.log.Tracef("soc estimated: %.2f%% (vehicle: %.2f%%)", s.socCharge, f)
 		}
 	}
 

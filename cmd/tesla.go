@@ -52,12 +52,12 @@ func generateToken(username, password string) {
 		tesla.WithCredentials(username, password),
 	)
 	if err != nil {
-		log.FATAL.Fatalln(err)
+		log.Fatalln(err)
 	}
 
 	token, err := client.Token()
 	if err != nil {
-		log.FATAL.Fatalln(err)
+		log.Fatalln(err)
 	}
 
 	fmt.Println()
@@ -70,12 +70,12 @@ func generateToken(username, password string) {
 
 func runTeslaToken(cmd *cobra.Command, args []string) {
 	util.LogLevel(viper.GetString("log"), viper.GetStringMapString("levels"))
-	log.INFO.Printf("evcc %s (%s)", server.Version, server.Commit)
+	log.Infof("evcc %s (%s)", server.Version, server.Commit)
 
 	// load config
 	conf, err := loadConfigFile(cfgFile)
 	if err != nil {
-		log.FATAL.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	teslas := funk.Filter(conf.Vehicles, func(v qualifiedConfig) bool {
@@ -92,7 +92,7 @@ func runTeslaToken(cmd *cobra.Command, args []string) {
 	}
 
 	if vehicleConf.Name == "" {
-		log.FATAL.Fatal("vehicle not found")
+		log.Fatalln("vehicle not found")
 	}
 
 	var credentials struct {
@@ -101,7 +101,7 @@ func runTeslaToken(cmd *cobra.Command, args []string) {
 	}
 
 	if err := util.DecodeOther(vehicleConf.Other, &credentials); err != nil {
-		log.FATAL.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	generateToken(credentials.User, credentials.Password)

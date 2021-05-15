@@ -80,7 +80,7 @@ func NewPhoenixEVEth(uri string, id uint8) (*PhoenixEVEth, error) {
 	}
 
 	log := util.NewLogger("ev-eth")
-	conn.Logger(log.TRACE)
+	conn.Logger(log.TraceLogger())
 
 	wb := &PhoenixEVEth{
 		conn: conn,

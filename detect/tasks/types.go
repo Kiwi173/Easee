@@ -39,5 +39,5 @@ type Task struct {
 }
 
 type TaskHandler interface {
-	Test(log *util.Logger, in ResultDetails) []ResultDetails
+	Test(log util.Logger, in ResultDetails) []ResultDetails
 }

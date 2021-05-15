@@ -64,7 +64,7 @@ func (h *Hub) Run(events <-chan Event) {
 
 		msg, err := h.apply(ev, definition.Msg)
 		if err != nil {
-			log.ERROR.Printf("invalid template for %s: %v", ev.Event, err)
+			log.Errorf("invalid template for %s: %v", ev.Event, err)
 			continue
 		}
 

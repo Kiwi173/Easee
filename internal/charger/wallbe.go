@@ -108,7 +108,7 @@ func NewWallbe(uri string) (*Wallbe, error) {
 	}
 
 	log := util.NewLogger("wallbe")
-	conn.Logger(log.TRACE)
+	conn.Logger(log.TraceLogger())
 
 	wb := &Wallbe{
 		conn:   conn,

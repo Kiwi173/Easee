@@ -25,7 +25,7 @@ type InfluxConfig struct {
 // Influx is a influx publisher
 type Influx struct {
 	sync.Mutex
-	log      *util.Logger
+	log      util.Logger
 	client   influxdb2.Client
 	org      string
 	database string
@@ -79,7 +79,7 @@ func (m *Influx) Run(loadPoints []core.LoadPointAPI, in <-chan util.Param) {
 	// log errors
 	go func() {
 		for err := range writer.Errors() {
-			m.log.ERROR.Println(err)
+			m.log.Errorln(err)
 		}
 	}()
 
@@ -129,7 +129,7 @@ func (m *Influx) Run(loadPoints []core.LoadPointAPI, in <-chan util.Param) {
 		fields["value"] = val
 
 		// write asynchronously
-		m.log.TRACE.Printf("write %s=%v (%v)", param.Key, param.Val, tags)
+		m.log.Tracef("write %s=%v (%v)", param.Key, param.Val, tags)
 		p := influxdb2.NewPoint(param.Key, tags, fields, time.Now())
 		writer.WritePoint(p)
 	}

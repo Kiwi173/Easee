@@ -23,22 +23,22 @@ func init() {
 
 func runDump(cmd *cobra.Command, args []string) {
 	util.LogLevel(viper.GetString("log"), viper.GetStringMapString("levels"))
-	log.INFO.Printf("evcc %s (%s)", server.Version, server.Commit)
+	log.Infof("evcc %s (%s)", server.Version, server.Commit)
 
 	// load config
 	conf, err := loadConfigFile(cfgFile)
 	if err != nil {
-		log.FATAL.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	// setup environment
 	if err := configureEnvironment(conf); err != nil {
-		log.FATAL.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	site, err := configureSiteAndLoadpoints(conf)
 	if err != nil {
-		log.FATAL.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	d := dumper{len: 2}

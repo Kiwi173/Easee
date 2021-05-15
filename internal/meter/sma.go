@@ -23,7 +23,7 @@ type values struct {
 
 // SMA supporting SMA Home Manager 2.0 and SMA Energy Meter 30
 type SMA struct {
-	log     *util.Logger
+	log     util.Logger
 	mux     *util.Waiter
 	uri     string
 	serial  string
@@ -57,7 +57,7 @@ func NewSMA(uri, serial, power, energy string) (api.Meter, error) {
 	log := util.NewLogger("sma")
 
 	sm := &SMA{
-		mux:     util.NewWaiter(udpTimeout, func() { log.TRACE.Println("wait for initial value") }),
+		mux:     util.NewWaiter(udpTimeout, func() { log.Traceln("wait for initial value") }),
 		log:     log,
 		uri:     uri,
 		serial:  serial,
@@ -115,7 +115,7 @@ func (sm *SMA) updateMeterValues(msg sma.Telegram) {
 			sm.values.energy = energy
 			sm.mux.Update()
 		} else {
-			sm.log.WARN.Println("missing obis for energy")
+			sm.log.Warnln("missing obis for energy")
 		}
 	}
 
@@ -123,21 +123,21 @@ func (sm *SMA) updateMeterValues(msg sma.Telegram) {
 		sm.values.currentL1 = currentL1
 		sm.mux.Update()
 	} else {
-		sm.log.WARN.Println("missing obis for currentL1")
+		sm.log.Warnln("missing obis for currentL1")
 	}
 
 	if currentL2, ok := msg.Values[sma.CurrentL2]; ok {
 		sm.values.currentL2 = currentL2
 		sm.mux.Update()
 	} else {
-		sm.log.WARN.Println("missing obis for currentL2")
+		sm.log.Warnln("missing obis for currentL2")
 	}
 
 	if currentL3, ok := msg.Values[sma.CurrentL3]; ok {
 		sm.values.currentL3 = currentL3
 		sm.mux.Update()
 	} else {
-		sm.log.WARN.Println("missing obis for currentL3")
+		sm.log.Warnln("missing obis for currentL3")
 	}
 }
 

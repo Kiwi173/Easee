@@ -65,7 +65,7 @@ type NRGDeviceMetadata struct {
 // NRGKickConnect charger implementation
 type NRGKickConnect struct {
 	*request.Helper
-	log      *util.Logger
+	log      util.Logger
 	uri      string
 	mac      string
 	password string
@@ -96,7 +96,7 @@ func NewNRGKickConnect(uri, mac, password string) (*NRGKickConnect, error) {
 		password: password,
 	}
 
-	nrg.log.WARN.Println("-- experimental --")
+	nrg.log.Warnln("-- experimental --")
 
 	return nrg, nil
 }

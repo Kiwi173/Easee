@@ -40,7 +40,7 @@ var (
 
 // SEMP is the SMA SEMP server
 type SEMP struct {
-	log          *util.Logger
+	log          util.Logger
 	cache        *util.Cache
 	closeC       chan struct{}
 	doneC        chan struct{}
@@ -92,7 +92,7 @@ func (s *SEMP) advertise(st, usn string) *ssdp.Advertiser {
 	descriptor := s.hostURI + basePath + "/description.xml"
 	ad, err := ssdp.Advertise(st, usn, descriptor, serverName, maxAge)
 	if err != nil {
-		s.log.ERROR.Println(err)
+		s.log.Errorln(err)
 	}
 	return ad
 }
@@ -119,7 +119,7 @@ ANNOUNCE:
 		case <-ticker.C:
 			for _, ad := range ads {
 				if err := ad.Alive(); err != nil {
-					s.log.ERROR.Println(err)
+					s.log.Errorln(err)
 				}
 			}
 		case <-s.closeC:
@@ -129,7 +129,7 @@ ANNOUNCE:
 
 	for _, ad := range ads {
 		if err := ad.Bye(); err != nil {
-			s.log.ERROR.Println(err)
+			s.log.Errorln(err)
 		}
 	}
 
@@ -159,11 +159,11 @@ func (s *SEMP) callbackURI() string {
 	if len(ips) > 0 {
 		ip = ips[0].IP.String()
 	} else {
-		s.log.ERROR.Printf("couldn't determine ip address- specify %s to override", sempBaseURLEnv)
+		s.log.Errorf("couldn't determine ip address- specify %s to override", sempBaseURLEnv)
 	}
 
 	uri := fmt.Sprintf("http://%s:%d", ip, s.port)
-	s.log.WARN.Printf("%s unspecified, using %s instead", sempBaseURLEnv, uri)
+	s.log.Warnf("%s unspecified, using %s instead", sempBaseURLEnv, uri)
 
 	return uri
 }
@@ -185,7 +185,7 @@ func (s *SEMP) handlers(router *mux.Router) {
 }
 
 func (s *SEMP) writeXML(w http.ResponseWriter, msg interface{}) {
-	s.log.TRACE.Printf("send: %+v", msg)
+	s.log.Tracef("send: %+v", msg)
 
 	b, err := xml.MarshalIndent(msg, "", "  ")
 	if err != nil {
@@ -505,7 +505,7 @@ func (s *SEMP) deviceControlHandler(w http.ResponseWriter, r *http.Request) {
 	var msg EM2Device
 
 	err := xml.NewDecoder(r.Body).Decode(&msg)
-	s.log.TRACE.Printf("recv: %+v", msg)
+	s.log.Tracef("recv: %+v", msg)
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)

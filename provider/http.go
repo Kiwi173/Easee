@@ -35,7 +35,7 @@ type Auth struct {
 }
 
 // AuthHeaders creates authorization headers from config
-func AuthHeaders(log *util.Logger, auth Auth, headers map[string]string) error {
+func AuthHeaders(log util.Logger, auth Auth, headers map[string]string) error {
 	if strings.ToLower(auth.Type) != "basic" {
 		return fmt.Errorf("unsupported auth type: %s", auth.Type)
 	}
@@ -95,10 +95,10 @@ func NewHTTPProviderFromConfig(other map[string]interface{}) (IntProvider, error
 }
 
 // NewHTTP create HTTP provider
-func NewHTTP(log *util.Logger, method, uri string, headers map[string]string, body string, insecure bool, jq string, scale float64) (*HTTP, error) {
+func NewHTTP(log util.Logger, method, uri string, headers map[string]string, body string, insecure bool, jq string, scale float64) (*HTTP, error) {
 	url := util.DefaultScheme(uri, "http")
 	if url != uri {
-		log.WARN.Printf("missing scheme for %s, assuming http", uri)
+		log.Warnf("missing scheme for %s, assuming http", uri)
 	}
 
 	p := &HTTP{

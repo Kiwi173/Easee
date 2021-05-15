@@ -26,7 +26,7 @@ Usage:
 func main() {
 	if len(os.Args) < 3 {
 		usage()
-		log.Fatal("not enough arguments")
+		log.Fatalln("not enough arguments")
 	}
 
 	params := make(map[string]interface{})
@@ -53,29 +53,29 @@ func main() {
 
 	if key != "" {
 		usage()
-		log.Fatal("unexpected number of parameters")
+		log.Fatalln("unexpected number of parameters")
 	}
 
 	v, err := vehicle.NewCloudFromConfig(params)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	switch action {
 	case "wakeup":
 		vv, ok := v.(api.VehicleStartCharge)
 		if !ok {
-			log.Fatal("not supported:", action)
+			log.Fatalln("not supported:", action)
 		}
 		if err := vv.StartCharge(); err != nil {
-			log.Fatal(err)
+			log.Fatalln(err)
 		}
 
 	case "soc":
 		start := time.Now()
 		for {
 			if time.Since(start) > time.Minute {
-				log.Fatal(api.ErrTimeout)
+				log.Fatalln(api.ErrTimeout)
 			}
 
 			soc, err := v.SoC()
@@ -85,7 +85,7 @@ func main() {
 					continue
 				}
 
-				log.Fatal(err)
+				log.Fatalln(err)
 			}
 
 			fmt.Println(int(math.Round(soc)))
@@ -93,6 +93,6 @@ func main() {
 		}
 
 	default:
-		log.Fatal("invalid action:", action)
+		log.Fatalln("invalid action:", action)
 	}
 }

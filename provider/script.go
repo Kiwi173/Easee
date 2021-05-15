@@ -17,7 +17,7 @@ import (
 
 // Script implements shell script-based providers and setters
 type Script struct {
-	log     *util.Logger
+	log     util.Logger
 	script  string
 	timeout time.Duration
 	cache   time.Duration
@@ -58,7 +58,7 @@ func NewScriptProvider(script string, timeout time.Duration, jq string, cache ti
 		timeout: timeout,
 		cache:   cache,
 	}
-	
+
 	if jq != "" {
 		op, err := gojq.Parse(jq)
 		if err != nil {
@@ -92,11 +92,11 @@ func (e *Script) exec(script string) (string, error) {
 			s = strings.TrimSpace(string(ee.Stderr))
 		}
 
-		e.log.ERROR.Printf("%s: %s", strings.Join(args, " "), s)
+		e.log.Errorf("%s: %s", strings.Join(args, " "), s)
 		return "", err
 	}
 
-	e.log.TRACE.Printf("%s: %s", strings.Join(args, " "), s)
+	e.log.Tracef("%s: %s", strings.Join(args, " "), s)
 
 	return s, nil
 }
@@ -115,7 +115,7 @@ func (e *Script) StringGetter() func() (string, error) {
 				}
 			}
 		}
-		
+
 		return e.val, e.err
 	}
 }
