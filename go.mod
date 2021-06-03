@@ -10,6 +10,7 @@ require (
 	github.com/asaskevich/EventBus v0.0.0-20200907212545-49d423059eef
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/benbjohnson/clock v1.1.0
+	github.com/bketelsen/crypt v0.0.4-0.20210603171104-501fab740166 // indirect
 	github.com/bogosj/tesla v1.0.0
 	github.com/containrrr/shoutrrr v0.4.4
 	github.com/deepmap/oapi-codegen v1.7.1 // indirect
