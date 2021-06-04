@@ -1,7 +1,7 @@
 .PHONY: default all clean install install-ui ui assets lint lint-ui test build test-release release
 .PHONY: docker publish-testing publish-latest publish-images
 .PHONY: prepare-image image-rootfs image-update
-.PHONY: soc server server-image
+.PHONY: soc stamps
 
 # build vars
 TAG_NAME := $(shell test -d .git && git describe --abbrev=0 --tags)
@@ -103,3 +103,6 @@ image-update:
 soc:
 	@echo Version: $(VERSION) $(BUILD_DATE)
 	go build -o evcc-soc $(BUILD_TAGS) $(BUILD_ARGS) github.com/andig/evcc/cmd/soc
+
+stamps:
+	cd vehicle/bluelink && ./generate.sh && cd ../..
