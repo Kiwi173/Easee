@@ -114,10 +114,9 @@ func (sm *SMA) TotalEnergy() (float64, error) {
 func (sm *SMA) Currents() (float64, float64, float64, error) {
 	values, err := sm.device.GetValues()
 
-	measurements := []sunny.ValueID{sunny.CurrentL1, sunny.CurrentL2, sunny.CurrentL3}
 	var vals [3]float64
-	for i := 0; i < 3; i++ {
-		vals[i] = sma.AsFloat(values[measurements[i]])
+	for i, m := range []sunny.ValueID{sunny.CurrentL1, sunny.CurrentL2, sunny.CurrentL3} {
+		vals[i] = sma.AsFloat(values[m])
 	}
 
 	return vals[0], vals[1], vals[2], err
