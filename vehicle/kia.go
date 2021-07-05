@@ -41,10 +41,11 @@ func NewKiaFromConfig(other map[string]interface{}) (api.Vehicle, error) {
 	}
 
 	settings := bluelink.Config{
-		URI:               "https://prd.eu-ccapi.kia.com:8080",
-		BasicToken:        "ZmRjODVjMDAtMGEyZi00YzY0LWJjYjQtMmNmYjE1MDA3MzBhOnNlY3JldA==",
-		CCSPServiceID:     "fdc85c00-0a2f-4c64-bcb4-2cfb1500730a",
-		CCSPApplicationID: "693a33fa-c117-43f2-ae3b-61a02d24f417",
+		URI:           "https://prd.eu-ccapi.kia.com:8080",
+		BasicToken:    "ZmRjODVjMDAtMGEyZi00YzY0LWJjYjQtMmNmYjE1MDA3MzBhOnNlY3JldA==",
+		CCSPServiceID: "fdc85c00-0a2f-4c64-bcb4-2cfb1500730a",
+		// CCSPApplicationID: "693a33fa-c117-43f2-ae3b-61a02d24f417",
+		CCSPApplicationID: "e7bcd186-a5fd-410d-92cb-6876a42288bd",
 		BrandAuthUrl:      "https://eu-account.kia.com/auth/realms/eukiaidm/protocol/openid-connect/auth?client_id=f4d531c7-1043-444d-b09a-ad24bd913dd4&scope=openid%%20profile%%20email%%20phone&response_type=code&hkid_session_reset=true&redirect_uri=%s/api/v1/user/integration/redirect/login&ui_locales=%s&state=%s:%s",
 	}
 
