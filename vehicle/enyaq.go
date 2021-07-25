@@ -71,6 +71,21 @@ func NewEnyaqFromConfig(other map[string]interface{}) (api.Vehicle, error) {
 		if err == nil {
 			log.DEBUG.Printf("found vehicle: %v", cc.VIN)
 		}
+
+		// images
+		// helper := request.NewHelper(log)
+		// helper.Client.Transport = &oauth2.Transport{
+		// 	Source: oauth2.StaticTokenSource(&oauth2.Token{
+		// 		AccessToken: identity.IDToken(),
+		// 	}),
+		// 	Base: helper.Client.Transport,
+		// }
+
+		// uri := fmt.Sprintf("https://api.skoda-connect.com/vehicles/%s", cc.VIN)
+
+		// var res interface{}
+		// err = helper.GetJSON(uri, &res)
+		// panic(err)
 	}
 
 	if err == nil {
@@ -93,6 +108,22 @@ func NewEnyaqFromConfig(other map[string]interface{}) (api.Vehicle, error) {
 		api.Client.Timeout = cc.Timeout
 
 		v.Provider = skoda.NewProvider(api, strings.ToUpper(cc.VIN), cc.Cache)
+
+		// images
+		// helper := request.NewHelper(log)
+		// helper.Client.Transport = &oauth2.Transport{
+		// 	// Source: oauth2.StaticTokenSource(&oauth2.Token{
+		// 	// 	AccessToken: identity.IDToken(),
+		// 	// }),
+		// 	Source: identity,
+		// 	Base:   helper.Client.Transport,
+		// }
+
+		// uri := fmt.Sprintf("https://api.skoda-connect.com/vehicles/%s", cc.VIN)
+
+		// var res interface{}
+		// err = helper.GetJSON(uri, &res)
+		// panic(err)
 	}
 
 	return v, err

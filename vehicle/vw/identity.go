@@ -226,6 +226,8 @@ func (v *Identity) LoginSkoda(query url.Values, user, password string) error {
 
 		q, err := v.login(uri, user, password)
 		if err == nil {
+			v.idToken = q.Get("id_token")
+
 			data := url.Values(map[string][]string{
 				"auth_code": {q.Get("code")},
 				"id_token":  {q.Get("id_token")},
