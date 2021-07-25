@@ -17,6 +17,8 @@ const DefaultBaseURI = "https://msg.volkswagen.de/fs-car"
 // RegionAPI is the VW api used for determining the home region
 const RegionAPI = "https://mal-1a.prd.ece.vwg-connect.com/api"
 
+const ImageAPI = "https://vehicle-image.apps.emea.vwapps.io"
+
 // API is the VW api client
 type API struct {
 	*request.Helper
@@ -49,6 +51,33 @@ func (v *API) getJSON(uri string, res interface{}) error {
 	}
 
 	return err
+}
+
+// ImageResponse is the https://vehicle-image.apps.emea.vwapps.io/vehicleimages/exterior/%s api
+type ImageResponse struct {
+	ImageURLs []string
+	Images    []struct {
+		URL, ViewDirection, Angle string
+	}
+}
+
+// Images implements the /vehicleimages response
+func (v *API) Images(vin string) (ImageResponse, error) {
+	baseIdentity := v.Client.Transport.(*oauth2.Transport).Source.(*Identity)
+
+	helper := request.NewHelper(util.NewLogger("IMAGE"))
+	helper.Client.Transport = &oauth2.Transport{
+		Source: oauth2.StaticTokenSource(&oauth2.Token{
+			AccessToken: baseIdentity.IDToken(),
+		}),
+		Base: helper.Client.Transport,
+	}
+
+	var res ImageResponse
+	uri := fmt.Sprintf("%s/vehicleimages/exterior/%s", ImageAPI, vin)
+	err := helper.GetJSON(uri, &res)
+
+	return res, err
 }
 
 // VehiclesResponse is the /usermanagement/users/v1/%s/%s/vehicles api

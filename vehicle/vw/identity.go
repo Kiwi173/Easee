@@ -39,6 +39,7 @@ type Identity struct {
 	log *util.Logger
 	*request.Helper
 	oauth2.TokenSource
+	idToken string
 }
 
 // NewIdentity creates VW identity
@@ -162,6 +163,10 @@ func (v *Identity) postTos(uri string) (*http.Response, error) {
 	return resp, err
 }
 
+func (v *Identity) IDToken() string {
+	return v.idToken
+}
+
 // LoginVAG performs VAG login and finally exchanges id token for access and refresh tokens
 func (v *Identity) LoginVAG(clientID string, query url.Values, user, password string) error {
 	if user == "" || password == "" {
@@ -174,6 +179,8 @@ func (v *Identity) LoginVAG(clientID string, query url.Values, user, password st
 
 		q, err := v.login(uri, user, password)
 		if err == nil {
+			v.idToken = q.Get("id_token")
+
 			data := url.Values(map[string][]string{
 				"grant_type": {"id_token"},
 				"scope":      {"sc2:fal"},
