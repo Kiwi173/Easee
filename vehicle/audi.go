@@ -2,6 +2,7 @@ package vehicle
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/andig/evcc/util"
 	"github.com/andig/evcc/util/request"
 	"github.com/andig/evcc/vehicle/vw"
+	"golang.org/x/oauth2"
 )
 
 // https://github.com/davidgiga1993/AudiAPI
@@ -79,4 +81,39 @@ func NewAudiFromConfig(other map[string]interface{}) (api.Vehicle, error) {
 	}
 
 	return v, err
+}
+
+type AudiVehicles struct {
+	Vehicles []AudiVehicle
+}
+
+type AudiVehicle struct {
+	VIN       string
+	ShortName string
+	ImageUrl  string
+}
+
+func (v *Audi) Images(identity *vw.Identity, vin string) ([]string, error) {
+	helper := request.NewHelper(util.NewLogger("IMAGE"))
+	helper.Client.Transport = &oauth2.Transport{
+		Source: oauth2.StaticTokenSource(&oauth2.Token{
+			AccessToken: identity.AccessToken(),
+		}),
+		Base: helper.Client.Transport,
+	}
+
+	uri := "https://api.my.audi.com/smns/v1/navigation/v1/vehicles"
+	// uri := fmt.Sprintf("https://api.my.audi.com/smns/v1/navigation/v1/vehicles/%s", vin)
+
+	req, err := request.New(http.MethodGet, uri, nil, map[string]string{
+		"X-Market": "de_DE",
+	})
+
+	var res AudiVehicles
+	if err == nil {
+		err = helper.DoJSON(req, &res)
+		fmt.Println(res)
+	}
+
+	panic(err)
 }

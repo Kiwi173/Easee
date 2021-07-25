@@ -63,12 +63,12 @@ type ImageResponse struct {
 
 // Images implements the /vehicleimages response
 func (v *API) Images(vin string) (ImageResponse, error) {
-	baseIdentity := v.Client.Transport.(*oauth2.Transport).Source.(*Identity)
+	identity := v.Client.Transport.(*oauth2.Transport).Source.(*Identity)
 
 	helper := request.NewHelper(util.NewLogger("IMAGE"))
 	helper.Client.Transport = &oauth2.Transport{
 		Source: oauth2.StaticTokenSource(&oauth2.Token{
-			AccessToken: baseIdentity.IDToken(),
+			AccessToken: identity.IDToken(),
 		}),
 		Base: helper.Client.Transport,
 	}
