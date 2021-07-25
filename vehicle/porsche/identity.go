@@ -199,26 +199,47 @@ type Vehicle struct {
 type VehicleResponse struct {
 	VIN              string
 	ModelDescription string
-	Pictures         []struct {
-		URL         string
-		View        string
-		Size        int
-		Width       int
-		Height      int
-		Transparent bool
-	}
+	Pictures         []VehicleImage
 }
 
-func (v *Identity) FindVehicle(accessTokens AccessTokens, vin string) (Vehicle, error) {
+type VehicleImage struct {
+	URL         string
+	View        string
+	Size        int
+	Width       int
+	Height      int
+	Transparent bool
+}
+
+func (v *Identity) Vehicles(accessTokens AccessTokens) ([]VehicleResponse, error) {
+	var res []VehicleResponse
+
 	uri := "https://connect-portal.porsche.com/core/api/v3/de/de_DE/vehicles"
 	req, err := request.New(http.MethodGet, uri, nil, map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", accessTokens.Token.AccessToken),
 	})
 
-	var vehicles []VehicleResponse
 	if err == nil {
-		err = v.DoJSON(req, &vehicles)
+		err = v.DoJSON(req, &res)
 	}
+
+	return res, err
+}
+
+func (v *Identity) Images(accessTokens AccessTokens, vin string) ([]VehicleImage, error) {
+	vehicles, err := v.Vehicles(accessTokens)
+
+	for _, v := range vehicles {
+		if v.VIN == vin {
+			return v.Pictures, nil
+		}
+	}
+
+	return nil, err
+}
+
+func (v *Identity) FindVehicle(accessTokens AccessTokens, vin string) (Vehicle, error) {
+	vehicles, err := v.Vehicles(accessTokens)
 
 	var foundVehicle VehicleResponse
 	var foundEmobilityVehicle bool
