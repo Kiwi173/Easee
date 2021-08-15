@@ -1,6 +1,7 @@
 package util
 
 import (
+	"context"
 	"io"
 	"log"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/andig/evcc/util/internal"
 	jww "github.com/spf13/jwalterweatherman"
 )
 
@@ -24,6 +26,20 @@ var (
 	// LogThreshold is the default log file level
 	LogThreshold = jww.LevelWarn
 )
+
+// Log is the context key to use with golang.org/x/net/context's
+// WithValue function to associate a *util.Logger value with a context.
+var Log internal.ContextKey
+
+func contextLogger(ctx context.Context) *Logger {
+	if ctx != nil {
+		if r, ok := ctx.Value(Log).(*Logger); ok {
+			return r
+		}
+	}
+
+	return nil
+}
 
 // LogAreaPadding of log areas
 var LogAreaPadding = 6
