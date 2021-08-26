@@ -134,6 +134,7 @@ type LoadPoint struct {
 	chargedEnergy  float64       // Charged energy while connected in Wh
 	chargeDuration time.Duration // Charge duration
 
+	rt    RuntimeSettings
 	tasks []func() error // task list for repeated execution
 }
 

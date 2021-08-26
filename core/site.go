@@ -351,6 +351,8 @@ func (site *Site) Prepare(uiChan chan<- util.Param, pushChan chan<- push.Event) 
 			}
 		}(id)
 
+		settings.Add(id, lp)
+
 		lp.Prepare(lpUIChan, lpPushChan, site.lpUpdateChan)
 	}
 }
