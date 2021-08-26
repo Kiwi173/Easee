@@ -468,6 +468,8 @@ func (lp *LoadPoint) Prepare(uiChan chan<- util.Param, pushChan chan<- push.Even
 	if ctrl, ok := lp.charger.(LoadpointController); ok {
 		ctrl.LoadpointControl(lp)
 	}
+
+	lp.loadSettings()
 }
 
 // syncCharger updates charger status and synchronizes it with expectations

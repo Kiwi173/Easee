@@ -159,6 +159,11 @@ func (lp *LoadPoint) SetTargetCharge(finishAt time.Time, targetSoC int) {
 	lp.socTimer.Time = finishAt
 	lp.socTimer.SoC = targetSoC
 
+	// persist
+	lp.rt.FinishAt = finishAt
+	lp.rt.TargetSoC = targetSoC
+	lp.saveSettings()
+
 	lp.requestUpdate()
 }
 
