@@ -56,7 +56,7 @@ func (s *settingsService) Save(lp interface{}, node RuntimeSettings) error {
 	id := s.lp(lp)
 	s.data[id] = node
 
-	b, err := json.Marshal(s.data)
+	b, err := json.MarshalIndent(s.data, "", "  ")
 	if err != nil {
 		return err
 	}
