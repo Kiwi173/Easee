@@ -48,7 +48,7 @@ func AuthHeaders(log *util.Logger, auth Auth, headers map[string]string) error {
 }
 
 // NewHTTPProviderFromConfig creates a HTTP provider
-func NewHTTPProviderFromConfig(other map[string]interface{}) (IntProvider, error) {
+func NewHTTPProviderFromConfig(other map[string]interface{}) (Provider[T Gettable], error) {
 	cc := struct {
 		URI, Method string
 		Headers     map[string]string

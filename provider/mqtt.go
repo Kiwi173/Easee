@@ -30,7 +30,7 @@ func init() {
 }
 
 // NewMqttFromConfig creates Mqtt provider
-func NewMqttFromConfig(other map[string]interface{}) (IntProvider, error) {
+func NewMqttFromConfig(other map[string]interface{}) (Provider[T Gettable], error) {
 	cc := struct {
 		mqtt.Config    `mapstructure:",squash"`
 		Topic, Payload string // Payload only applies to setters

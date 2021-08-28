@@ -28,7 +28,7 @@ func init() {
 }
 
 // NewModbusFromConfig creates Modbus plugin
-func NewModbusFromConfig(other map[string]interface{}) (IntProvider, error) {
+func NewModbusFromConfig(other map[string]interface{}) (Provider[T Gettable], error) {
 	cc := struct {
 		Model           string
 		modbus.Settings `mapstructure:",squash"`

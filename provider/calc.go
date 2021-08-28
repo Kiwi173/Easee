@@ -11,11 +11,11 @@ type calcProvider struct {
 }
 
 func init() {
-	registry.Add("calc", NewCalcFromConfig)
+	getters.Add("calc", NewCalcFromConfig)
 }
 
 // NewCalcFromConfig creates calc provider
-func NewCalcFromConfig(other map[string]interface{}) (IntProvider, error) {
+func NewCalcFromConfig(other map[string]interface{}) (Provider[T Gettable], error) {
 	cc := struct {
 		Add []Config
 	}{}
@@ -27,7 +27,7 @@ func NewCalcFromConfig(other map[string]interface{}) (IntProvider, error) {
 	o := &calcProvider{}
 
 	for idx, cc := range cc.Add {
-		f, err := NewFloatGetterFromConfig(cc)
+		f, err := NewGetterFromConfig[float64](cc)
 		if err != nil {
 			return nil, fmt.Errorf("add[%d]: %w", idx, err)
 		}

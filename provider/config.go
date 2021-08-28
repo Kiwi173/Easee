@@ -23,16 +23,16 @@ type (
 	}
 )
 
-// type providerRegistry map[string]func(map[string]interface{}) (IntProvider, error)
+// type providerRegistry map[string]func(map[string]interface{}) (Provider[T Gettable], error)
 
-// func (r providerRegistry) Add(name string, factory func(map[string]interface{}) (IntProvider, error)) {
+// func (r providerRegistry) Add(name string, factory func(map[string]interface{}) (Provider[T Gettable], error)) {
 // 	if _, exists := r[name]; exists {
 // 		panic(fmt.Sprintf("cannot register duplicate plugin type: %s", name))
 // 	}
 // 	r[name] = factory
 // }
 
-// func (r providerRegistry) Get(name string) (func(map[string]interface{}) (IntProvider, error), error) {
+// func (r providerRegistry) Get(name string) (func(map[string]interface{}) (Provider[T Gettable], error), error) {
 // 	factory, exists := r[name]
 // 	if !exists {
 // 		return nil, fmt.Errorf("invalid plugin type: %s", name)
@@ -40,9 +40,10 @@ type (
 // 	return factory, nil
 // }
 
-// var registry providerRegistry = make(map[string]func(map[string]interface{}) (IntProvider, error))
+// var registry providerRegistry = make(map[string]func(map[string]interface{}) (Provider[T Gettable], error))
 
-var registry = make(util.Registry[Provider[Gettable]])
+var getters = make(util.Registry[Provider[Gettable]])
+var setters = make(util.Registry[Provider[Settable]])
 
 // Config is the general provider config
 type Config struct {
@@ -62,7 +63,7 @@ func (c Config) PluginType() string {
 
 // NewGetterFromConfig creates a Getter from config
 func NewGetterFromConfig[T Gettable](config Config) (res func() (T, error), err error) {
-	factory, err := registry.Get(config.PluginType())
+	factory, err := getters.Get(config.PluginType())
 	if err == nil {
 		var provider IntProvider
 		provider, err = factory(config.Other)
@@ -124,7 +125,7 @@ func NewGetterFromConfig[T Gettable](config Config) (res func() (T, error), err 
 // 		res, err = NewOpenWBStatusProviderFromConfig(config.Other)
 
 // 	default:
-// 		var factory func(map[string]interface{}) (IntProvider, error)
+// 		var factory func(map[string]interface{}) (Provider[T Gettable], error)
 // 		factory, err = registry.Get(typ)
 // 		if err == nil {
 // 			var provider IntProvider
