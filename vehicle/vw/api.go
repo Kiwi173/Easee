@@ -51,13 +51,6 @@ func (v *API) getJSON(uri string, res interface{}) error {
 	return err
 }
 
-// VehiclesResponse is the /usermanagement/users/v1/%s/%s/vehicles api
-type VehiclesResponse struct {
-	UserVehicles struct {
-		Vehicle []string
-	}
-}
-
 // Vehicles implements the /vehicles response
 func (v *API) Vehicles() ([]string, error) {
 	var res VehiclesResponse
