@@ -13,6 +13,7 @@ import (
 	"github.com/evcc-io/evcc/util"
 	"github.com/evcc-io/evcc/util/oauth"
 	"github.com/evcc-io/evcc/util/request"
+	"github.com/evcc-io/evcc/vehicle/ford"
 	"golang.org/x/oauth2"
 )
 
@@ -20,7 +21,6 @@ const (
 	fordAuth           = "https://fcis.ice.ibmcloud.com"
 	fordAPI            = "https://usapi.cv.ford.com"
 	fordVehicleList    = "https://api.mps.ford.com/api/users/vehicles"
-	fordStatusExpiry   = 5 * time.Minute       // if returned status value is older, evcc will init refresh
 	fordRefreshTimeout = time.Minute           // timeout to get status after refresh
 	fordTimeFormat     = "01-02-2006 15:04:05" // time format used by Ford API, time is in UTC
 )
@@ -33,6 +33,7 @@ type Ford struct {
 	user, password, vin string
 	tokenSource         oauth2.TokenSource
 	statusG             func() (interface{}, error)
+	expiry              time.Duration
 	refreshId           string
 	refreshTime         time.Time
 }
@@ -46,9 +47,11 @@ func NewFordFromConfig(other map[string]interface{}) (api.Vehicle, error) {
 	cc := struct {
 		embed               `mapstructure:",squash"`
 		User, Password, VIN string
+		Expiry              time.Duration
 		Cache               time.Duration
 	}{
-		Cache: interval,
+		Expiry: expiry,
+		Cache:  interval,
 	}
 
 	if err := util.DecodeOther(other, &cc); err != nil {
@@ -68,6 +71,7 @@ func NewFordFromConfig(other map[string]interface{}) (api.Vehicle, error) {
 		user:     cc.User,
 		password: cc.Password,
 		vin:      strings.ToUpper(cc.VIN),
+		expiry:   cc.Expiry,
 	}
 
 	token, err := v.login()
@@ -148,49 +152,18 @@ func (v *Ford) request(method, uri string) (*http.Request, error) {
 	return req, err
 }
 
-// fordVehicleStatus holds the relevant data extracted from JSON that the server sends
-// on vehicle status request
-type fordVehicleStatus struct {
-	VehicleStatus struct {
-		BatteryFillLevel struct {
-			Value     float64
-			Timestamp string
-		}
-		ElVehDTE struct {
-			Value     float64
-			Timestamp string
-		}
-		ChargingStatus struct {
-			Value     string
-			Timestamp string
-		}
-		PlugStatus struct {
-			Value     int
-			Timestamp string
-		}
-		LastRefresh string
-	}
-	Status int
-}
-
 // vehicles returns the list of user vehicles
 func (v *Ford) vehicles() ([]string, error) {
-	var resp struct {
-		Vehicles struct {
-			Values []struct {
-				VIN string
-			} `json:"$values"`
-		}
-	}
+	var res ford.VehiclesResponse
 
 	req, err := v.request(http.MethodGet, fordVehicleList)
 	if err == nil {
-		err = v.DoJSON(req, &resp)
+		err = v.DoJSON(req, &res)
 	}
 
 	var vehicles []string
 	if err == nil {
-		for _, v := range resp.Vehicles.Values {
+		for _, v := range res.Vehicles.Values {
 			vehicles = append(vehicles, v.VIN)
 		}
 	}
@@ -200,7 +173,7 @@ func (v *Ford) vehicles() ([]string, error) {
 
 // status performs a /status request to the Ford API and triggers a refresh if
 // the received status is too old
-func (v *Ford) status() (res fordVehicleStatus, err error) {
+func (v *Ford) status() (res ford.VehicleStatus, err error) {
 	// follow up requested refresh
 	if v.refreshId != "" {
 		return v.refreshResult()
@@ -217,8 +190,8 @@ func (v *Ford) status() (res fordVehicleStatus, err error) {
 		var lastUpdate time.Time
 		lastUpdate, err = time.Parse(fordTimeFormat, res.VehicleStatus.LastRefresh)
 
-		if elapsed := time.Since(lastUpdate); err == nil && elapsed > fordStatusExpiry {
-			v.log.DEBUG.Printf("vehicle status is outdated (age %v > %v), requesting refresh", elapsed, fordStatusExpiry)
+		if elapsed := time.Since(lastUpdate); err == nil && elapsed > v.expiry {
+			v.log.DEBUG.Printf("vehicle status is outdated (age %v > %v), requesting refresh", elapsed, v.expiry)
 
 			if err = v.refreshRequest(); err == nil {
 				err = api.ErrMustRetry
@@ -230,7 +203,7 @@ func (v *Ford) status() (res fordVehicleStatus, err error) {
 }
 
 // refreshResult triggers an update if not already in progress, otherwise gets result
-func (v *Ford) refreshResult() (res fordVehicleStatus, err error) {
+func (v *Ford) refreshResult() (res ford.VehicleStatus, err error) {
 	uri := fmt.Sprintf("%s/api/vehicles/v3/%s/statusrefresh/%s", fordAPI, v.vin, v.refreshId)
 
 	var req *http.Request
@@ -287,7 +260,7 @@ var _ api.Battery = (*Ford)(nil)
 // SoC implements the api.Battery interface
 func (v *Ford) SoC() (float64, error) {
 	res, err := v.statusG()
-	if res, ok := res.(fordVehicleStatus); err == nil && ok {
+	if res, ok := res.(ford.VehicleStatus); err == nil && ok {
 		return float64(res.VehicleStatus.BatteryFillLevel.Value), nil
 	}
 
@@ -299,7 +272,7 @@ var _ api.VehicleRange = (*Ford)(nil)
 // Range implements the api.VehicleRange interface
 func (v *Ford) Range() (int64, error) {
 	res, err := v.statusG()
-	if res, ok := res.(fordVehicleStatus); err == nil && ok {
+	if res, ok := res.(ford.VehicleStatus); err == nil && ok {
 		return int64(res.VehicleStatus.ElVehDTE.Value), nil
 	}
 
@@ -313,7 +286,7 @@ func (v *Ford) Status() (api.ChargeStatus, error) {
 	status := api.StatusA // disconnected
 
 	res, err := v.statusG()
-	if res, ok := res.(fordVehicleStatus); err == nil && ok {
+	if res, ok := res.(ford.VehicleStatus); err == nil && ok {
 		if res.VehicleStatus.PlugStatus.Value == 1 {
 			status = api.StatusB // connected, not charging
 		}
