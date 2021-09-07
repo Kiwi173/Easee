@@ -117,30 +117,3 @@ type ClimaterResponse struct {
 		}
 	}
 }
-
-// RolesRights is the /rolesrights/operationlist response
-type RolesRights struct {
-	OperationList struct {
-		VIN, UserId, Role, Status string
-		ServiceInfo               []ServiceInfo
-	}
-}
-
-// ServiceInfo is the rolesrights service information
-type ServiceInfo struct {
-	ServiceId     string
-	ServiceType   string
-	ServiceStatus struct {
-		Status string
-	}
-	LicenseRequired            bool
-	CumulatedLicense           map[string]interface{}
-	PrimaryUserRequired        bool
-	TermsAndConditionsRequired bool
-	ServiceEol                 string
-	RolesAndRightsRequired     bool
-	InvocationUrl              struct {
-		Content string
-	}
-	Operation []map[string]interface{}
-}

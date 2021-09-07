@@ -1,7 +1,6 @@
 package vw
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -22,6 +21,7 @@ type API struct {
 	*request.Helper
 	brand, country string
 	baseURI        string
+	statusURI      string
 }
 
 // NewAPI creates a new api client
@@ -41,8 +41,13 @@ func NewAPI(log *util.Logger, identity oauth2.TokenSource, brand, country string
 	return v
 }
 
-func (v *API) getJSON(uri string, res interface{}) error {
-	req, err := request.New(http.MethodGet, uri, nil, request.AcceptJSON)
+func (v *API) getJSON(uri string, res interface{}, headers ...map[string]string) error {
+	header := request.AcceptJSON
+	if len(headers) == 1 {
+		header = headers[0]
+	}
+
+	req, err := request.New(http.MethodGet, uri, nil, header)
 
 	if err == nil {
 		err = v.DoJSON(req, &res)
@@ -73,6 +78,15 @@ func (v *API) HomeRegion(vin string) error {
 		}
 	}
 
+	_, _ = v.Status(vin, map[string]string{
+		"Accept":        request.JSONContent,
+		"X-App-Name":    "myAudi",
+		"X-Country-Id":  "DE",
+		"X-Language-Id": "de",
+		"X-App-Version": "3.22.0",
+	})
+	panic(1)
+
 	return err
 }
 
@@ -85,11 +99,37 @@ func (v *API) RolesRights(vin string) (RolesRights, error) {
 }
 
 // Status implements the /status response
-func (v *API) Status(vin string) (string, error) {
-	var res json.RawMessage
-	uri := fmt.Sprintf("%s/bs/vsr/v1/vehicles/%s", RegionAPI, vin)
-	err := v.getJSON(uri, &res)
-	return string(res), err
+func (v *API) Status(vin string, headers map[string]string) (StatusResponse, error) {
+	var res StatusResponse
+	uri := fmt.Sprintf("%s/bs/vsr/v1/vehicles/%s/status", RegionAPI, vin)
+	err := v.getJSON(uri, &res, headers)
+
+	if _, ok := err.(request.StatusError); ok {
+		var rr RolesRights
+		rr, err = v.RolesRights(vin)
+
+		var si *ServiceInfo
+		if err == nil {
+			if si = rr.ServiceByID(StatusService); si == nil {
+				err = fmt.Errorf("%s not found", StatusService)
+			}
+		}
+
+		if err == nil {
+			uri := si.InvocationUrl.Content
+			uri = strings.ReplaceAll(uri, "{vin}", vin)
+			uri = strings.ReplaceAll(uri, "{brand}", v.brand)
+			uri = strings.ReplaceAll(uri, "{country}", v.country)
+
+			if strings.HasSuffix(uri, fmt.Sprintf("%s/", vin)) {
+				uri += "status"
+			}
+
+			err = v.getJSON(uri, &res, headers)
+		}
+	}
+
+	return res, err
 }
 
 // Charger implements the /charger response
