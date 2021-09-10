@@ -215,8 +215,11 @@ func (v *Identity) Sign(req *http.Request, body io.ReadSeeker) error {
 	creds, err := provider.Retrieve(ctx)
 
 	var hashBytes []byte
-	if err == nil && body != nil {
-		hashBytes, err = makeSha256Reader(body)
+	if err == nil {
+		if body == nil {
+			body = strings.NewReader("")
+		}
+		hashBytes, err = sha256FromReader(body)
 	}
 
 	if err == nil {
@@ -229,7 +232,7 @@ func (v *Identity) Sign(req *http.Request, body io.ReadSeeker) error {
 }
 
 // https://github.com/bernays/appsyncgo
-func makeSha256Reader(reader io.ReadSeeker) (hashBytes []byte, err error) {
+func sha256FromReader(reader io.ReadSeeker) (hashBytes []byte, err error) {
 	hash := sha256.New()
 	start, err := reader.Seek(0, io.SeekCurrent)
 	if err != nil {
