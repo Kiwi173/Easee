@@ -1,6 +1,9 @@
 package fiat
 
 import (
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
@@ -9,11 +12,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	v4 "github.com/aws/aws-sdk-go/aws/signer/v4"
-	"github.com/aws/aws-sdk-go/service/cognitoidentity"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/cognitoidentity"
+	"github.com/aws/aws-sdk-go-v2/service/cognitoidentity/types"
 	"github.com/evcc-io/evcc/util"
 	"github.com/evcc-io/evcc/util/request"
 )
@@ -29,7 +33,7 @@ type Identity struct {
 	*request.Helper
 	user, password string
 	uid            string
-	creds          *cognitoidentity.Credentials
+	creds          *types.Credentials
 }
 
 // NewIdentity creates Fiat identity
@@ -166,18 +170,22 @@ func (v *Identity) Login() error {
 		}
 	}
 
-	var credRes *cognitoidentity.GetCredentialsForIdentityOutput
-
+	var cfg aws.Config
 	if err == nil {
-		session := session.Must(session.NewSession(&aws.Config{Region: aws.String(Region)}))
-		svc := cognitoidentity.New(session)
+		cfg, err = config.LoadDefaultConfig(context.TODO(), config.WithRegion(Region))
+	}
 
-		credRes, err = svc.GetCredentialsForIdentity(&cognitoidentity.GetCredentialsForIdentityInput{
-			IdentityId: &identity.IdentityID,
-			Logins: map[string]*string{
-				"cognito-identity.amazonaws.com": &identity.Token,
-			},
-		})
+	var credRes *cognitoidentity.GetCredentialsForIdentityOutput
+	if err == nil {
+		svc := cognitoidentity.NewFromConfig(cfg)
+
+		credRes, err = svc.GetCredentialsForIdentity(context.TODO(),
+			&cognitoidentity.GetCredentialsForIdentityInput{
+				IdentityId: &identity.IdentityID,
+				Logins: map[string]string{
+					"cognito-identity.amazonaws.com": identity.Token,
+				},
+			})
 	}
 
 	if err == nil {
@@ -202,10 +210,37 @@ func (v *Identity) Sign(req *http.Request, body io.ReadSeeker) error {
 	}
 
 	// sign request
-	signer := v4.NewSigner(credentials.NewStaticCredentials(
-		*v.creds.AccessKeyId, *v.creds.SecretKey, *v.creds.SessionToken,
-	))
-	_, err := signer.Sign(req, body, "execute-api", Region, time.Now())
+	ctx := context.TODO()
+	provider := credentials.NewStaticCredentialsProvider(*v.creds.AccessKeyId, *v.creds.SecretKey, *v.creds.SessionToken)
+	creds, err := provider.Retrieve(ctx)
+
+	var hashBytes []byte
+	if err == nil && body != nil {
+		hashBytes, err = makeSha256Reader(body)
+	}
+
+	if err == nil {
+		sha256Hash := hex.EncodeToString(hashBytes)
+		signer := v4.NewSigner()
+		err = signer.SignHTTP(ctx, creds, req, sha256Hash, "execute-api", Region, time.Now())
+	}
 
 	return err
+}
+
+// https://github.com/bernays/appsyncgo
+func makeSha256Reader(reader io.ReadSeeker) (hashBytes []byte, err error) {
+	hash := sha256.New()
+	start, err := reader.Seek(0, io.SeekCurrent)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		// ensure error is returned if unable to seek back to start if payload
+		_, err = reader.Seek(start, io.SeekStart)
+	}()
+
+	_, err = io.Copy(hash, reader)
+	return hash.Sum(nil), err
 }

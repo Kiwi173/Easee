@@ -7,7 +7,10 @@ require (
 	github.com/PuerkitoBio/goquery v1.7.1
 	github.com/asaskevich/EventBus v0.0.0-20200907212545-49d423059eef
 	github.com/avast/retry-go/v3 v3.1.1
-	github.com/aws/aws-sdk-go v1.40.7
+	github.com/aws/aws-sdk-go-v2 v1.9.0
+	github.com/aws/aws-sdk-go-v2/config v1.8.1
+	github.com/aws/aws-sdk-go-v2/credentials v1.4.1
+	github.com/aws/aws-sdk-go-v2/service/cognitoidentity v1.5.0
 	github.com/benbjohnson/clock v1.1.0
 	github.com/bogosj/tesla v1.0.2
 	github.com/containrrr/shoutrrr v0.5.0
